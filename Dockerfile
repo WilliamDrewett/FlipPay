@@ -7,8 +7,8 @@ WORKDIR /app
 # Install PDM
 RUN pip install --no-cache-dir pdm
 
-# Copy PDM project files
-COPY pyproject.toml ./
+# Copy PDM project files from backend directory
+COPY backend/pyproject.toml ./
 
 # Configure PDM to not use virtual environment in container
 ENV PDM_USE_VENV=false
@@ -16,8 +16,8 @@ ENV PDM_USE_VENV=false
 # Install dependencies using PDM
 RUN pdm install --prod --no-editable
 
-# Copy the application code
-COPY main.py .
+# Copy the application code from backend directory
+COPY backend/main.py ./
 
 # Expose the port the app runs on
 EXPOSE 8000
