@@ -16,8 +16,8 @@ ENV PDM_USE_VENV=false
 # Install dependencies using PDM
 RUN pdm install --prod --no-editable
 
-# Copy the application code from backend directory
-COPY backend/main.py ./
+# Copy the entire backend directory
+COPY backend/ ./
 
 # Expose the port the app runs on
 EXPOSE 8000

@@ -10,6 +10,8 @@ class RewardClaim(BaseModel):
 
 class TransactionBase(BaseModel):
     amount: float
+    from_token: Optional[str] = None
+    to_token: Optional[str] = None
 
 class TransactionCreate(TransactionBase):
     pass
@@ -23,6 +25,7 @@ class Transaction(TransactionBase):
 class GamePlayBase(BaseModel):
     game_type: str
     outcome: str
+    prize: Optional[str] = None
 
 class GamePlayCreate(GamePlayBase):
     pass

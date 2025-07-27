@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from sqlalchemy.orm import relationship
-from .database import Base
+from database import Base
 
 class User(Base):
     __tablename__ = "users"
@@ -18,6 +18,8 @@ class Transaction(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     amount = Column(Float)
+    from_token = Column(String, nullable=True)
+    to_token = Column(String, nullable=True)
     
     user = relationship("User", back_populates="transactions")
 
@@ -28,5 +30,6 @@ class GamePlay(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     game_type = Column(String)
     outcome = Column(String)
+    prize = Column(String, nullable=True)
 
     user = relationship("User", back_populates="game_plays") 

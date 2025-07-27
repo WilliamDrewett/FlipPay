@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, Query, Path, Request
 from sqlalchemy.orm import Session
-from . import models, schemas
-from .database import SessionLocal, engine
+import models, schemas
+from database import SessionLocal, engine
 import random
 from fastapi.responses import JSONResponse
 import httpx
@@ -99,7 +99,7 @@ def get_user_prizes(wallet_address: str, db: Session = Depends(get_db)):
     
 
 @app.post("/swaps/", response_model=schemas.Transaction)
-def create_swap(wallet_address: str, amount: float, db: Session = Depends(get_db)):
+def create_swap(swap_data: schemas.TransactionCreate, wallet_address: str, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.wallet_address == wallet_address).first()
     if db_user is None:
         # For the hackathon, we can auto-create the user
@@ -112,9 +112,14 @@ def create_swap(wallet_address: str, amount: float, db: Session = Depends(get_db
     is_free = random.random() < 0.1
     if not is_free:
         # Earn points based on trade volume (e.g., 1 point per dollar)
-        db_user.points += int(amount)
+        db_user.points += int(swap_data.amount)
 
-    transaction = models.Transaction(user_id=db_user.id, amount=amount)
+    transaction = models.Transaction(
+        user_id=db_user.id,
+        amount=swap_data.amount,
+        from_token=swap_data.from_token,
+        to_token=swap_data.to_token
+    )
     db.add(transaction)
     db.commit()
     db.refresh(transaction)
@@ -141,9 +146,14 @@ def play_game(wallet_address: str, game_type: str, db: Session = Depends(get_db)
     # Mock prize
     win = random.random() < 0.2  # 20% chance to win
     outcome = "win" if win else "lose"
-    prize = "NFT" if win else "no_prize" # or tokens, etc.
+    prize_won = "NFT" if win else None # or tokens, etc.
 
-    game_play = models.GamePlay(user_id=db_user.id, game_type=game_type, outcome=outcome)
+    game_play = models.GamePlay(
+        user_id=db_user.id, 
+        game_type=game_type, 
+        outcome=outcome,
+        prize=prize_won
+    )
     db.add(game_play)
     db.commit()
     db.refresh(game_play)
@@ -163,6 +173,39 @@ def claim_reward(wallet_address: str, prize_id: int, db: Session = Depends(get_d
     # In a real app, you'd verify the prize belongs to the user and hasn't been claimed
     # For this mock, we'll just return a success message.
     return {"status": "success", "message": f"Prize {prize_id} claimed by {wallet_address}"}
+
+
+@app.get("/admin/reset-db")
+def reset_database(db: Session = Depends(get_db)):
+    # Clear existing data
+    db.query(models.GamePlay).delete()
+    db.query(models.Transaction).delete()
+    db.query(models.User).delete()
+    db.commit()
+
+    # Create mock user
+    mock_user = models.User(wallet_address="test", points=1250)
+    db.add(mock_user)
+    db.commit()
+    db.refresh(mock_user)
+
+    # Add mock transactions
+    transactions = [
+        models.Transaction(user_id=mock_user.id, amount=500, from_token="ETH", to_token="DOT"),
+        models.Transaction(user_id=mock_user.id, amount=750, from_token="BTC", to_token="USDT"),
+    ]
+    db.add_all(transactions)
+
+    # Add mock prizes
+    prizes = [
+        models.GamePlay(user_id=mock_user.id, game_type="spin_wheel", outcome="win", prize="Rare NFT"),
+        models.GamePlay(user_id=mock_user.id, game_type="mystery_box", outcome="win", prize="100 Tokens"),
+        models.GamePlay(user_id=mock_user.id, game_type="spin_wheel", outcome="lose"),
+    ]
+    db.add_all(prizes)
+    db.commit()
+    
+    return {"status": "success", "message": "Database has been reset with mock data for user 'test'."}
 
 
 @app.get("/admin/users/")
