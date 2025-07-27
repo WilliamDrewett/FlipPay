@@ -288,20 +288,33 @@ def create_swap(
     # Calculate points earned ($10 = 1 point)
     points_earned = calculate_points(swap_data.amount)
     
+    # Always add points for swap value
+    db_user.points += points_earned
+
     # Update prize pools
     prize_pool = get_or_create_prize_pool(db)
     if was_free:
         # If free, deduct from instant prize pool
         prize_pool.instant_pool -= swap_data.amount
         fee_paid = 0.0
+        # Add a special reward for lottery win
+        bonus_points = 10
+        db_user.points += bonus_points
+        # Record a special prize for the user
+        game_play = models.GamePlay(
+            user_id=db_user.id,
+            game_type="free_swap_lottery",
+            outcome="win",
+            prize="Free Swap Winner (+10 points)",
+            points_spent=0
+        )
+        db.add(game_play)
     else:
         # If not free, add to prize pools
         prize_pool.instant_pool += fee_breakdown["instant_pool"]
         prize_pool.game_pool += fee_breakdown["game_pool"]
         prize_pool.platform_pool += fee_breakdown["platform"]
         fee_paid = fee_breakdown["total_fee"]
-        # Add points to user
-        db_user.points += points_earned
 
     # Create transaction record
     transaction = models.Transaction(
@@ -309,7 +322,7 @@ def create_swap(
         amount=swap_data.amount,
         from_token=swap_data.from_token,
         to_token=swap_data.to_token,
-        points_earned=points_earned if not was_free else 0,
+        points_earned=points_earned,
         was_free=was_free,
         fee_paid=fee_paid
     )
@@ -320,7 +333,7 @@ def create_swap(
     
     return schemas.SwapResponse(
         transaction=transaction,
-        points_earned=points_earned if not was_free else 0,
+        points_earned=points_earned,
         was_free=was_free,
         fee_breakdown=fee_breakdown
     )
@@ -369,7 +382,21 @@ def play_game(
     prize_won = None
     if win:
         prize_won = random.choice(game_config["available_prizes"])
-        # In a real implementation, you'd deduct from game prize pool here
+        # If the prize is tokens or points, add to user balance
+        if "Token" in prize_won:
+            # Extract the number of tokens from the prize string
+            import re
+            match = re.search(r"(\d+)", prize_won)
+            if match:
+                tokens = int(match.group(1))
+                db_user.points += tokens
+        elif "point" in prize_won.lower():
+            # If prize mentions points, extract and add
+            import re
+            match = re.search(r"(\d+)", prize_won)
+            if match:
+                points = int(match.group(1))
+                db_user.points += points
 
     game_play = models.GamePlay(
         user_id=db_user.id, 
