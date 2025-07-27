@@ -9,9 +9,9 @@ class RewardClaim(BaseModel):
     message: str
 
 class TransactionBase(BaseModel):
-    amount: float
-    from_token: Optional[str] = None
-    to_token: Optional[str] = None
+    amount: float = 100.0  # Default $100 swap
+    from_token: str = "ETH"  # Default origin token
+    to_token: str = "USDC"   # Default destination token (valid from list)
 
 class TransactionCreate(TransactionBase):
     pass
@@ -19,13 +19,23 @@ class TransactionCreate(TransactionBase):
 class Transaction(TransactionBase):
     id: int
     user_id: int
+    points_earned: int
+    was_free: bool
+    fee_paid: float
 
     model_config = ConfigDict(from_attributes=True)
 
+class SwapResponse(BaseModel):
+    transaction: Transaction
+    points_earned: int
+    was_free: bool
+    fee_breakdown: dict
+
 class GamePlayBase(BaseModel):
-    game_type: str
+    game_type: str = "spin_wheel"  # Default game
     outcome: str
     prize: Optional[str] = None
+    points_spent: int
 
 class GamePlayCreate(GamePlayBase):
     pass
@@ -37,7 +47,7 @@ class GamePlay(GamePlayBase):
     model_config = ConfigDict(from_attributes=True)
 
 class UserBase(BaseModel):
-    wallet_address: str
+    wallet_address: str = "test"  # Default test wallet
 
 class UserCreate(UserBase):
     pass
@@ -48,4 +58,21 @@ class User(UserBase):
     transactions: List[Transaction] = []
     game_plays: List[GamePlay] = []
 
-    model_config = ConfigDict(from_attributes=True) 
+    model_config = ConfigDict(from_attributes=True)
+
+class PrizePool(BaseModel):
+    instant_pool: float
+    game_pool: float
+    platform_pool: float
+
+class GameConfig(BaseModel):
+    game_type: str
+    cost_points: int
+    win_probability: float
+    available_prizes: List[str]
+
+# Available token symbols for swaps
+AVAILABLE_TOKENS = [
+    "ETH", "AAVE", "sUSDe", "tBTC", "TRAC", "LBTC", 
+    "LDO", "LINK", "SKY", "wstETH", "USDC", "USDT"
+] 

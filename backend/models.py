@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -18,8 +18,11 @@ class Transaction(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     amount = Column(Float)
-    from_token = Column(String, nullable=True)
-    to_token = Column(String, nullable=True)
+    from_token = Column(String, nullable=False)  # Made required
+    to_token = Column(String, nullable=False)    # Made required
+    points_earned = Column(Integer, default=0)
+    was_free = Column(Boolean, default=False)
+    fee_paid = Column(Float, default=0.0)
     
     user = relationship("User", back_populates="transactions")
 
@@ -31,5 +34,14 @@ class GamePlay(Base):
     game_type = Column(String)
     outcome = Column(String)
     prize = Column(String, nullable=True)
+    points_spent = Column(Integer, default=0)
 
-    user = relationship("User", back_populates="game_plays") 
+    user = relationship("User", back_populates="game_plays")
+
+class PrizePool(Base):
+    __tablename__ = "prize_pools"
+
+    id = Column(Integer, primary_key=True, index=True)
+    instant_pool = Column(Float, default=0.0)
+    game_pool = Column(Float, default=0.0)
+    platform_pool = Column(Float, default=0.0) 
