@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, HTTPException, Query, Path, Request
 from sqlalchemy.orm import Session
 import models, schemas
@@ -5,6 +7,9 @@ from database import SessionLocal, engine
 import random
 from fastapi.responses import JSONResponse
 import httpx
+
+load_dotenv()
+API_KEY = os.getenv("API_KEY")
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -458,6 +463,29 @@ def delete_users(db: Session = Depends(get_db)):
     db.query(models.User).delete()
     db.commit()
     return {"status": "all users deleted"}
+
+@app.post("/ai_agent")
+async def ai_agent(query: str = Query(default="Write a short poem about a cross-chain ETH and Polkadot swap", description="Prompt for the AI agent")):
+    if not API_KEY:
+        raise HTTPException(status_code=500, detail="API_KEY not set in environment.")
+    url = "https://api.dify.ai/v1/chat-messages"
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "inputs": {},
+        "query": query,
+        "response_mode": "blocking",
+        "conversation_id": "",
+        "user": "api-user"
+    }
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, headers=headers, json=payload)
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail=response.text)
+        data = response.json()
+        return {"answer": data.get("answer")}
 
 if __name__ == "__main__":
     import uvicorn
