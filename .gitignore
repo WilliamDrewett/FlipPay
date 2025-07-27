@@ -16,4 +16,13 @@ build/
 
 # OS
 .DS_Store
-Thumbs.db 
+Thumbs.db
+
+# Database
+*.db
+*.db-journal
+
+# Project-specific
+.pdm-python
+.pytest_cache/
+/backend/8.1.1 
