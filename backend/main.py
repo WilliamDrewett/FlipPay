@@ -31,6 +31,20 @@ PLATFORM_RATE = 0.001      # 0.1%
 FREE_SWAP_CHANCE = 0.005   # 0.5% chance for free swap
 POINTS_PER_DOLLAR = 0.1    # $10 = 1 point
 
+# ---------------------------------------------------------------------------
+#  Helper utilities
+# ---------------------------------------------------------------------------
+
+def get_transactions_for_wallet(db: Session, wallet_address: str):
+    """Return a list of Transaction ORM objects for a given wallet.
+
+    Raises HTTPException(404) if the user is not found.
+    """
+    db_user = db.query(models.User).filter(models.User.wallet_address == wallet_address).first()
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return db_user.transactions
+
 # Game configurations
 GAME_CONFIGS = {
     "spin_wheel": {
@@ -245,12 +259,12 @@ def get_user_balance(wallet_address: str = Query(default="test", description="Wa
     return {"points": db_user.points}
 
 @app.get("/users/transactions", response_model=list[schemas.Transaction])
-def get_user_transactions(wallet_address: str = Query(default="test", description="Wallet address (defaults to 'test')"), db: Session = Depends(get_db)):
+def get_user_transactions(
+    wallet_address: str = Query(default="test", description="Wallet address (defaults to 'test')"),
+    db: Session = Depends(get_db),
+):
     """Get user transactions (defaults to test user)"""
-    db_user = db.query(models.User).filter(models.User.wallet_address == wallet_address).first()
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return db_user.transactions
+    return get_transactions_for_wallet(db, wallet_address)
 
 @app.get("/users/prizes", response_model=list[schemas.GamePlay])
 def get_user_prizes(wallet_address: str = Query(default="test", description="Wallet address (defaults to 'test')"), db: Session = Depends(get_db)):
@@ -465,25 +479,53 @@ def delete_users(db: Session = Depends(get_db)):
     return {"status": "all users deleted"}
 
 @app.post("/ai_agent")
-async def ai_agent(query: str = Query(default="Write a short poem about a cross-chain ETH and Polkadot swap", description="Prompt for the AI agent")):
+async def ai_agent(
+    lottery_result: str = Query(default="lost", description="Result of the lottery ('win' or 'lost')"),
+    wallet_address: str = Query(default="test", description="Wallet address (defaults to 'test')")
+):
     if not API_KEY:
         raise HTTPException(status_code=500, detail="API_KEY not set in environment.")
+
+    # ------------------------------------------------------------------
+    # Step 1: Retrieve transaction history directly from the database
+    # ------------------------------------------------------------------
+    db = SessionLocal()
+    try:
+        transactions = get_transactions_for_wallet(db, wallet_address)
+        # Convert ORM objects to plain dicts via the schema for cleanliness
+        transaction_history = [schemas.Transaction.from_orm(tx).dict() for tx in transactions]
+    finally:
+        db.close()
+
+    # Dify expects the transaction history as a **string**, not an array/object.
+    import json
+    transaction_history_str = json.dumps(transaction_history)
+
+    # ------------------------------------------------------------------
+    # Step 2: Call Dify AI with the assembled payload
+    # ------------------------------------------------------------------
     url = "https://api.dify.ai/v1/chat-messages"
     headers = {
         "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
+
     payload = {
-        "inputs": {},
-        "query": query,
+        "inputs": {
+            "transaction_history": transaction_history_str,
+            "lottery_result": lottery_result,
+        },
+        "query": "answer",  # Hard-coded prompt as requested
         "response_mode": "blocking",
         "conversation_id": "",
-        "user": "api-user"
+        "user": "api-user",
     }
+
     async with httpx.AsyncClient() as client:
         response = await client.post(url, headers=headers, json=payload)
         if response.status_code != 200:
             raise HTTPException(status_code=response.status_code, detail=response.text)
+
         data = response.json()
         return {"answer": data.get("answer")}
 
