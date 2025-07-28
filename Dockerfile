@@ -16,11 +16,29 @@ ENV PDM_USE_VENV=false
 # Install dependencies using PDM
 RUN pdm install --prod --no-editable
 
-# Copy the entire backend directory
+# Install dependencies required for bridge script
+RUN apt-get update && apt-get install -y curl ca-certificates gnupg \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g ts-node typescript \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install bridge NPM dependencies
+COPY backend/bridges/package*.json ./bridges/
+RUN cd bridges && npm ci --omit=dev
+
+# Copy the entire backend directory (Python sources)
 COPY backend/ ./
+
+# Copy bridge source
+COPY backend/bridges ./bridges
+
+# Copy the entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Expose the port the app runs on
 EXPOSE 8000
 
-# Command to run the application using PDM
-CMD ["pdm", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"] 
+# Command to run the application using entrypoint (includes smoke test)
+CMD ["docker-entrypoint.sh"] 
