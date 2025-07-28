@@ -7,6 +7,9 @@ from database import SessionLocal, engine
 import random
 from fastapi.responses import JSONResponse
 import httpx
+from pydantic import BaseModel
+import asyncio
+import subprocess
 
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
@@ -528,6 +531,60 @@ async def ai_agent(
 
         data = response.json()
         return {"answer": data.get("answer")}
+
+# ---------------------------------------------------------------------------
+#  Snowbridge Bridge Endpoint
+# ---------------------------------------------------------------------------
+
+class BridgeRequest(BaseModel):
+    environment: str = "westend_sepolia"
+    token_contract: str = "0x0000000000000000000000000000000000000000"  # Zero address → ETH
+    destination_parachain: int = 1000  # Asset Hub Westend
+    amount: int = 100000  # in token smallest unit (wei-like)
+    dry_run: bool = True  # If true, sets SMOKE_TEST=1 so no funds move
+
+class BridgeResponse(BaseModel):
+    stdout: str
+    stderr: str
+    returncode: int
+
+@app.post("/bridge", response_model=BridgeResponse)
+async def execute_bridge(req: BridgeRequest):
+    """Trigger the Snowbridge transfer script.
+    If dry_run is true (default) it only validates; nothing is broadcast.
+    """
+    # Build command
+    script_path = "bridges/scripts/bridgeEthToPolkadot.ts"
+    cmd = [
+        "npx",
+        "ts-node",
+        script_path,
+        req.environment,
+        req.token_contract,
+        str(req.destination_parachain),
+        str(req.amount),
+    ]
+
+    # Prepare env vars
+    env = os.environ.copy()
+    if req.dry_run:
+        env["SMOKE_TEST"] = "1"
+
+    # Execute asynchronously to avoid blocking the event loop too long
+    process = await asyncio.create_subprocess_exec(
+        *cmd,
+        cwd="/app",  # inside container root
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        env=env,
+    )
+    stdout_bytes, stderr_bytes = await process.communicate()
+
+    return BridgeResponse(
+        stdout=stdout_bytes.decode(),
+        stderr=stderr_bytes.decode(),
+        returncode=process.returncode,
+    )
 
 if __name__ == "__main__":
     import uvicorn

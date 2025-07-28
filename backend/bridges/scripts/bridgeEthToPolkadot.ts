@@ -84,6 +84,13 @@ if (!environment || !token_contract || !destination_parachain || !amountStr) {
         throw Error(`validation has one of more errors.`)
     }
 
+    if (process.env.SMOKE_TEST === "1") {
+        console.log("Smoke test flag detected: skipping transaction submission.")
+        // Clean up connections since we are not sending the transaction.
+        await context.destroyContext()
+        process.exit(0)
+    }
+
     // Estimate the cost of the execution cost of the transaction
     const {
         tx,
