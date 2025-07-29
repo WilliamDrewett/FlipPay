@@ -4,7 +4,7 @@
 </script>
 
 <!-- --------------------------------------- CONTENT -->
-<footer class="flex flex-col mt-auto items-center justify-center w-full my-4 px-8">
+<footer class="flex flex-col mt-auto items-center justify-center w-full py-4 px-8">
 	<div class="w-full border-t border-base-content/30 mb-4"/>
 	<div class="relative flex items-center justify-between w-full text-sm">
 		<p>2025 FlipPay</p>

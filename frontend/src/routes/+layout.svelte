@@ -2,19 +2,18 @@
 <script lang="ts">
 	import '../style/app.css';
 	import Header from '$lib/components/layout/Header.svelte';
-	import SubHeader from '$lib/components/layout/SubHeader.svelte';
 	import Footer from '$lib/components/layout/Footer.svelte';
 	let { children } = $props();
 </script>
 
 <!-- --------------------------------------- CONTENT -->
-<div class="gradient-background h-screen w-screen flex flex-col">
+<div class="min-h-screen w-full flex flex-col">
 	<Header />
-	<SubHeader />
-	<main class="flex w-full flex-col items-center justify-center p-6">
+	<main class="flex w-full flex-col items-center justify-center h-full">
 		{@render children()}
 	</main>
 	<Footer />
+  <div class="gradient-background fixed top-0 left-0 inset-0 -z-10"></div>
 </div>
 
 <!-- --------------------------------------- STYLE -->
@@ -25,7 +24,6 @@
   background-size: 160% 160%;
   animation: gradient-animation 60s ease-in-out infinite;
   animation-delay: -45s;
-
 }
 
 @keyframes gradient-animation {

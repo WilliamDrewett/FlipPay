@@ -83,7 +83,7 @@
 </script>
 
 <!-- --------------------------------------- CONTENT -->
-<h2 class="text-3xl! m-8 text-center font-bold">
+<h2 class="sub-header text-3xl! mb-18 text-center font-bold">
 	Connect, Swap,
 	<button class="cursor-pointer">
 		<span class="text-secondary slot-machine">
@@ -139,5 +139,12 @@
 		font-size: inherit;
 		font-weight: inherit;
 		line-height: 1;
+	}
+
+	/* Hide sub-header on screens with height less than 900px */
+	@media (max-height: 899px) {
+		.sub-header {
+			display: none;
+		}
 	}
 </style>

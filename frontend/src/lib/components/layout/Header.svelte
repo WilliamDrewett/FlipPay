@@ -123,12 +123,14 @@
 <header class=" flex flex-col">
 	<div class="flex w-full items-center justify-between px-6 py-3">
 		<div class="flex items-center gap-8">
-			<h1>FlipPay</h1>
+			<a href="/">
+				<h1>FlipPay</h1>
+			</a>
 			<nav class="-mb-4">
 				<ul class="flex items-center gap-8">
 					<li>
 						<a href="/">
-							<p>Trade</p>
+							<p>Swap</p>
 						</a>
 					</li>
 					<li>
