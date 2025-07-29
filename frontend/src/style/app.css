@@ -1,7 +1,56 @@
 @import 'tailwindcss';
+
+
+@plugin "daisyui";
+
+
 @plugin "daisyui" {
-    themes: night --default, night --prefersdark, night;
-  }
+  themes: night --default, night --prefersdark, night;
+}
+
+/* Remove default focus styles from inputs and form elements (except checkboxes) */
+input:not([type="checkbox"]):focus,
+textarea:focus,
+select:focus,
+button:focus,
+input:not([type="checkbox"]):focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+button:focus-visible {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  ring: none !important;
+}
+
+/* Remove any default styling from inputs (except checkboxes) */
+input:not([type="checkbox"]),
+textarea,
+select {
+  border: none;
+  outline: none;
+  box-shadow: none;
+}
+
+/* Remove spinner arrows from number inputs */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: white;
+}
 
 h1 {
   font-size: 2rem;
@@ -21,4 +70,28 @@ h3 {
 h4 {
   font-size: 1rem;
   font-weight: 400;
+}
+
+
+.btn-rotate>div,
+.btn-rotate-full>div,
+.btn-flip-x>div,
+.btn-flip-y>div {
+  transition: all 0.4s ease;
+}
+
+.btn-rotate-full:hover>div {
+  transform: rotate(360deg);
+}
+
+.btn-rotate:hover>div {
+  transform: rotate(180deg);
+}
+
+.btn-flip-x:hover>div {
+  transform: rotateY(180deg);
+}
+
+.btn-flip-y:hover>div {
+  transform: rotateX(180deg);
 }
