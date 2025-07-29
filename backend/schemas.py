@@ -32,7 +32,7 @@ class SwapResponse(BaseModel):
     fee_breakdown: dict
 
 class GamePlayBase(BaseModel):
-    game_type: str = "spin_wheel"  # Default game
+    game_type: str = "loot_box"  # Default game
     outcome: str
     prize: Optional[str] = None
     points_spent: int

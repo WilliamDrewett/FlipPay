@@ -294,8 +294,9 @@ def get_user_prizes(wallet_address: str = Query(default="test", description="Wal
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Filter for only winning game plays
-    prizes = [gp for gp in db_user.game_plays if gp.outcome == "win"]
+    # Return all game plays that awarded a prize (prize not null).
+    # This includes spin-wheel wins as well as loot-box outcomes like "common" or "rare".
+    prizes = [gp for gp in db_user.game_plays if gp.prize is not None]
     return prizes
 
 @app.post("/swaps/", response_model=schemas.SwapResponse)
@@ -391,7 +392,7 @@ def get_game_configs():
 @app.post("/games/play/", response_model=schemas.GamePlay)
 def play_game(
     wallet_address: str = Query(default="test", description="Wallet address (defaults to 'test')"), 
-    game_type: str = Query(default="spin_wheel", description="Game type (defaults to 'spin_wheel')"), 
+    game_type: str = Query(default="loot_box", description="Game type (defaults to 'loot_box')"), 
     db: Session = Depends(get_db)
 ):
     """
