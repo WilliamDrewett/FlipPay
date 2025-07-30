@@ -2,7 +2,7 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
 
-	let { source, blockchain }: { source: boolean; blockchain: 'ETH' | 'POL' } = $props();
+	let { source, blockchain }: { source: boolean; blockchain: 'ETH' | 'DOT' } = $props();
 </script>
 
 <!-- --------------------------------------- CONTENT -->
@@ -21,7 +21,7 @@
 		<div class="flex items-center gap-1 text-white">
 			{#if blockchain === 'ETH'}
 				<Icon icon="token-branded:eth" color="white" width="28" height="28" />
-			{:else if blockchain === 'POL'}
+			{:else if blockchain === 'DOT'}
 				<Icon icon="token-branded:polkadot" color="white" width="28" height="28" />
 			{/if}
 			<p class="text-sm">{blockchain}</p>
@@ -37,8 +37,8 @@
 	<div class="flex items-center justify-between gap-2">
 		<p class="text-sm">
 			{#if blockchain === 'ETH'}
-				Etherum
-			{:else if blockchain === 'POL'}
+				Ethereum
+			{:else if blockchain === 'DOT'}
 				Polkadot
 			{/if}
 		</p>
@@ -47,7 +47,7 @@
 	<div
 		class="absolute bottom-0 left-0 h-10 -mb-10 w-[200%] bg-gradient-to-r from-transparent"
 		class:shadow-eth={blockchain === 'ETH'}
-		class:shadow-pol={blockchain === 'POL'}
+		class:shadow-pol={blockchain === 'DOT'}
 	/>
 </div>
 

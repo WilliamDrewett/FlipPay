@@ -67,7 +67,7 @@
 					</div>
 				</button>
 			</div>
-			<BlockchainInput source={false} blockchain="POL" />
+			<BlockchainInput source={false} blockchain="DOT" />
 			<Details blockchain="ETH" source={true} />
 		</div>
 		<div class="flex w-full items-center justify-between gap-2">

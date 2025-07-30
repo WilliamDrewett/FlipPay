@@ -1,3 +1,4 @@
+<!-- https://www.freepik.com/premium-ai-image/neon-futuristic-loot-crate-treasure-chest-vector-illustration-game-desgin-spritesheet-white_159931526.htm#fromView=keyword&page=3&position=6&uuid=c5e60241-2775-4fe9-ba40-f19534fbbca4&query=Loot+Box -->
 <!-- --------------------------------------- SCRIPT -->
 <script lang="ts">
 	import Icon from '@iconify/svelte';
@@ -5,7 +6,7 @@
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import { derived } from 'svelte/store';
-	import ethereumAddress from '$lib/store/wallets/etherum';
+	import ethereumAddress from '$lib/store/wallets/ethereum';
 	import polkadotAddress from '$lib/store/wallets/polkadot';
 
 	// Provider for Ethereum
@@ -18,11 +19,11 @@
 	// Check if wallets are already connected on component mount
 	onMount(async () => {
 		// Check Ethereum connection
-		if (browser && typeof window !== 'undefined' && window.ethereum) {
+		if (browser && typeof window !== 'undefined' && (window as any).ethereum) {
 			try {
-				const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+				const accounts = await (window as any).ethereum.request({ method: 'eth_accounts' });
 				if (accounts.length > 0) {
-					provider = new ethers.BrowserProvider(window.ethereum);
+					provider = new ethers.BrowserProvider((window as any).ethereum);
 					ethereumAddress.set(accounts[0]);
 				}
 			} catch (error) {
@@ -49,13 +50,13 @@
 
 	// Connect Ethereum wallet function
 	async function connectEthereumWallet() {
-		if (browser && typeof window !== 'undefined' && window.ethereum) {
+		if (browser && typeof window !== 'undefined' && (window as any).ethereum) {
 			try {
 				// Request account access
-				await window.ethereum.request({ method: 'eth_requestAccounts' });
+				await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
 				
 				// Create provider and get signer
-				provider = new ethers.BrowserProvider(window.ethereum);
+				provider = new ethers.BrowserProvider((window as any).ethereum);
 				const signer = await provider.getSigner();
 				
 				// Get address and update store
