@@ -22,7 +22,9 @@ frame-system-benchmarking = { optional = true, workspace = true }
 frame-system-rpc-runtime-api.workspace = true
 frame-system.workspace = true
 frame-try-runtime = { optional = true, workspace = true }
-getrandom = { version = "0.2.16", features = ["js"] }
+getrandom_v02 = { package = "getrandom", version = "0.2", features = ["js"] }
+getrandom_v03 = { package = "getrandom", version = "0.3", features = ["wasm_js"] }
+
 htlc-pallet = { path = "../pallets/htlc" }
 pallet-aura.workspace = true
 pallet-balances.workspace = true

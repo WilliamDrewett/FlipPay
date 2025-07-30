@@ -9593,6 +9593,7 @@ dependencies = [
 name = "solochain-template-runtime"
 version = "0.1.0"
 dependencies = [
+ "byte-slice-cast",
  "frame-benchmarking",
  "frame-executive",
  "frame-metadata-hash-extension",
@@ -9602,6 +9603,7 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
  "getrandom 0.2.16",
+ "getrandom 0.3.3",
  "htlc-pallet",
  "pallet-aura",
  "pallet-balances",

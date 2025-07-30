@@ -230,3 +230,84 @@ the correct dependencies, activate direnv `direnv allow`.
 Please follow the [Substrate Docker instructions
 here](https://github.com/paritytech/polkadot-sdk/blob/master/substrate/docker/README.md) to
 build the Docker container with the Substrate Node Template binary.
+
+## Solution 1 : Configuration dans le Cargo.toml du workspace (recommandée)
+
+Dans le fichier `Cargo.toml` de la **racine** du workspace (`/home/aqua/Desktop/libsignal-0.76.7/Cargo.toml`), ajoutez cette section :
+
+```toml
+[target.wasm32-unknown-unknown.dependencies]
+getrandom_v02 = { version = "0.2", features = ["js"], package = "getrandom" }
+getrandom_v03 = { version = "0.3", features = ["wasm_js"], package = "getrandom" }
+uuid = { version = "1.13", features = ["v4", "rng-getrandom"] }
+```
+
+## Solution 2 : Configuration cargo + rustflags
+
+Créez/modifiez le fichier `.cargo/config.toml` dans la racine du projet :
+
+```toml
+[target.wasm32-unknown-unknown]
+rustflags = ['--cfg', 'getrandom_backend="wasm_js"']
+```
+
+## Solution 3 : Si les solutions précédentes ne fonctionnent pas
+
+Dans le `Cargo.toml` de la racine, utilisez des patches :
+
+```toml
+[patch.crates-io]
+getrandom = { version = "0.3", features = ["wasm_js"] }
+
+# Ou pour forcer la version 0.2 partout :
+# getrandom = { version = "0.2", features = ["js"] }
+```
+
+## Commands pour tester
+
+```bash
+# Nettoyer d'abord
+cargo clean
+
+# Tester la compilation native
+cargo build --release
+
+# Tester la compilation WASM
+cargo build --release --target wasm32-unknown-unknown
+
+# Ou avec wasm-pack
+wasm-pack build --target web --out-dir ../pkg_wasm
+```
+
+## Debugging - Vérifier les dépendances
+
+Pour voir quelles versions sont utilisées :
+
+```bash
+cargo tree | grep getrandom
+cargo tree --target wasm32-unknown-unknown | grep getrandom
+```
+
+## Solution complète recommandée
+
+Créez ces deux fichiers dans la racine de libsignal :
+
+**`.cargo/config.toml`** :
+```toml
+[target.wasm32-unknown-unknown]
+rustflags = ['--cfg', 'getrandom_backend="wasm_js"']
+```
+
+**Ajoutez au `Cargo.toml` de la racine** :
+```toml
+[target.wasm32-unknown-unknown.dependencies]
+getrandom_v02 = { version = "0.2", features = ["js"], package = "getrandom" }
+getrandom_v03 = { version = "0.3", features = ["wasm_js"], package = "getrandom" }
+```
+
+Cette approche fonctionne parce que :
+1. Elle configure explicitement les features pour chaque version de getrandom
+2. Elle utilise la configuration cargo pour WASM
+3. Elle évite les conflits entre les différentes versions
+
+Essayez cette solution et dites-moi si cela fonctionne ! C'est exactement ce qui a résolu notre problème avec Substrate.
