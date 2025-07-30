@@ -1,3 +1,5 @@
+import { API_URL, FAKE } from "./API";
+
 // Types pour la réponse de l'API
 export interface User {
     wallet_address: string;
@@ -13,7 +15,20 @@ export interface CreateUserRequest {
 
 // Fonction pour créer un utilisateur
 export async function createUser(walletAddress: string): Promise<User> {
-    const url = 'https://flippay-production.up.railway.app/users/';
+    // ----------------------------------- FAKE DATA -----------------------------------
+    if (FAKE) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        return {
+            wallet_address: walletAddress,
+            id: 1,
+            points: 0,
+            transactions: [],
+            game_plays: []
+        };
+    }
+    // ----------------------------------- FAKE DATA -----------------------------------
+
+    const url = `${API_URL}/users/`;
 
     const requestBody: CreateUserRequest = {
         wallet_address: walletAddress
