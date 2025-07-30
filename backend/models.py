@@ -35,6 +35,7 @@ class GamePlay(Base):
     outcome = Column(String)
     prize = Column(String, nullable=True)
     points_spent = Column(Integer, default=0)
+    box_id = Column(Integer, nullable=True)  # Box/Reward ID that was opened
 
     user = relationship("User", back_populates="game_plays")
 

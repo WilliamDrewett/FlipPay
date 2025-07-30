@@ -194,10 +194,10 @@ def reset_database_with_mock_data():
 
         # Add mock prizes with points_spent
         prizes = [
-            models.GamePlay(user_id=mock_user.id, game_type="spin_wheel", outcome="win", prize="Rare NFT", points_spent=10),
-            models.GamePlay(user_id=mock_user.id, game_type="mystery_box", outcome="win", prize="100 Tokens", points_spent=15),
-            models.GamePlay(user_id=mock_user.id, game_type="spin_wheel", outcome="lose", points_spent=10),
-            models.GamePlay(user_id=mock_user.id, game_type="nft_crate", outcome="win", prize="Epic NFT Collection", points_spent=25),
+            models.GamePlay(user_id=mock_user.id, game_type="spin_wheel", outcome="win", prize="Rare NFT", points_spent=10, box_id=1),
+            models.GamePlay(user_id=mock_user.id, game_type="mystery_box", outcome="win", prize="100 Tokens", points_spent=15, box_id=2),
+            models.GamePlay(user_id=mock_user.id, game_type="spin_wheel", outcome="lose", points_spent=10, box_id=3),
+            models.GamePlay(user_id=mock_user.id, game_type="nft_crate", outcome="win", prize="Epic NFT Collection", points_spent=25, box_id=4),
         ]
         db.add_all(prizes)
         
@@ -235,6 +235,7 @@ def reset_database_with_mock_data():
                 outcome=gp.outcome,
                 prize=gp.prize,
                 points_spent=gp.points_spent,
+                box_id=gp.box_id,
             )
             db.add(cloned_gp)
 
@@ -398,7 +399,8 @@ def create_swap(
             game_type="free_swap_lottery",
             outcome="win",
             prize="Free Swap Winner (+10 points)",
-            points_spent=0
+            points_spent=0,
+            box_id=0  # Special box_id for lottery wins
         )
         db.add(game_play)
     else:
@@ -444,11 +446,12 @@ def get_game_configs():
 def play_game(
     wallet_address: str = Query(default="0x0000000000000000000000000000000000000000.5DAAnrj7VHTz5AnBZdMjxqJ1ojTHev3VbyT9RCPVvfy5FeaY", description="Wallet address (defaults to 'test')"), 
     game_type: str = Query(default="loot_box", description="Game type (defaults to 'loot_box')"), 
+    box_id: int = Query(default=1, description="Box/Reward ID to open (defaults to 1)"), 
     db: Session = Depends(get_db)
 ):
     """
     Enhanced game playing with proper game configurations and prize pool integration
-    Defaults to test user playing spin_wheel
+    Defaults to test user playing loot_box with box_id 1
     """
     db_user = db.query(models.User).filter(models.User.wallet_address == wallet_address).first()
     if db_user is None:
@@ -517,7 +520,8 @@ def play_game(
         game_type=game_type, 
         outcome=outcome,
         prize=prize_won,
-        points_spent=cost_to_play
+        points_spent=cost_to_play,
+        box_id=box_id
     )
     db.add(game_play)
     db.commit()

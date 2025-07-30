@@ -36,6 +36,7 @@ class GamePlayBase(BaseModel):
     outcome: str
     prize: Optional[str] = None
     points_spent: int
+    box_id: Optional[int] = None  # Box/Reward ID that was opened
 
 class GamePlayCreate(GamePlayBase):
     pass
