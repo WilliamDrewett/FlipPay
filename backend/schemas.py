@@ -47,7 +47,7 @@ class GamePlay(GamePlayBase):
     model_config = ConfigDict(from_attributes=True)
 
 class UserBase(BaseModel):
-    wallet_address: str = "test"  # Default test wallet
+    wallet_address: str = "0x0000000000000000000000000000000000000000.5DAAnrj7VHTz5AnBZdMjxqJ1ojTHev3VbyT9RCPVvfy5FeaY"  # Default demo wallet
 
 class UserCreate(UserBase):
     pass

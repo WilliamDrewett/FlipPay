@@ -188,8 +188,42 @@ def reset_database_with_mock_data():
         prize_pool = models.PrizePool(instant_pool=1000.0, game_pool=500.0, platform_pool=250.0)
         db.add(prize_pool)
         db.commit()
+
+        # ---------------------------------------------
+        # Duplicate mock data for demo wallet address
+        demo_wallet = "0x0000000000000000000000000000000000000000.5DAAnrj7VHTz5AnBZdMjxqJ1ojTHev3VbyT9RCPVvfy5FeaY"
+        demo_user = models.User(wallet_address=demo_wallet, points=1250)
+        db.add(demo_user)
+        db.commit()
+        db.refresh(demo_user)
+
+        # Clone transactions for demo user
+        for tx in db.query(models.Transaction).filter(models.Transaction.user_id == mock_user.id).all():
+            cloned_tx = models.Transaction(
+                user_id=demo_user.id,
+                amount=tx.amount,
+                from_token=tx.from_token,
+                to_token=tx.to_token,
+                points_earned=tx.points_earned,
+                was_free=tx.was_free,
+                fee_paid=tx.fee_paid,
+            )
+            db.add(cloned_tx)
+
+        # Clone prizes for demo user
+        for gp in db.query(models.GamePlay).filter(models.GamePlay.user_id == mock_user.id).all():
+            cloned_gp = models.GamePlay(
+                user_id=demo_user.id,
+                game_type=gp.game_type,
+                outcome=gp.outcome,
+                prize=gp.prize,
+                points_spent=gp.points_spent,
+            )
+            db.add(cloned_gp)
+
+        db.commit()
         
-        print("✅ Database initialized with fresh mock data for user 'test'")
+        print("✅ Database initialized with fresh mock data for users 'test' and demo wallet")
         return {"status": "success", "message": "Database has been reset with mock data for user 'test'."}
     except Exception as e:
         print(f"❌ Error initializing database: {e}")
@@ -264,7 +298,7 @@ def create_user(user: schemas.UserCreate = schemas.UserCreate(), db: Session = D
     return db_user
 
 @app.get("/users/", response_model=schemas.User)
-def read_user(wallet_address: str = Query(default="test", description="Wallet address (defaults to 'test')"), db: Session = Depends(get_db)):
+def read_user(wallet_address: str = Query(default="0x0000000000000000000000000000000000000000.5DAAnrj7VHTz5AnBZdMjxqJ1ojTHev3VbyT9RCPVvfy5FeaY", description="Wallet address (defaults to 'test')"), db: Session = Depends(get_db)):
     """Get user info (defaults to test user)"""
     db_user = db.query(models.User).filter(models.User.wallet_address == wallet_address).first()
     if db_user is None:
@@ -272,7 +306,7 @@ def read_user(wallet_address: str = Query(default="test", description="Wallet ad
     return db_user
 
 @app.get("/users/balance", response_model=schemas.UserBalance)
-def get_user_balance(wallet_address: str = Query(default="test", description="Wallet address (defaults to 'test')"), db: Session = Depends(get_db)):
+def get_user_balance(wallet_address: str = Query(default="0x0000000000000000000000000000000000000000.5DAAnrj7VHTz5AnBZdMjxqJ1ojTHev3VbyT9RCPVvfy5FeaY", description="Wallet address (defaults to 'test')"), db: Session = Depends(get_db)):
     """Get user balance (defaults to test user)"""
     db_user = db.query(models.User).filter(models.User.wallet_address == wallet_address).first()
     if db_user is None:
@@ -281,14 +315,14 @@ def get_user_balance(wallet_address: str = Query(default="test", description="Wa
 
 @app.get("/users/transactions", response_model=list[schemas.Transaction])
 def get_user_transactions(
-    wallet_address: str = Query(default="test", description="Wallet address (defaults to 'test')"),
+    wallet_address: str = Query(default="0x0000000000000000000000000000000000000000.5DAAnrj7VHTz5AnBZdMjxqJ1ojTHev3VbyT9RCPVvfy5FeaY", description="Wallet address (defaults to 'test')"),
     db: Session = Depends(get_db),
 ):
     """Get user transactions (defaults to test user)"""
     return get_transactions_for_wallet(db, wallet_address)
 
 @app.get("/users/prizes", response_model=list[schemas.GamePlay])
-def get_user_prizes(wallet_address: str = Query(default="test", description="Wallet address (defaults to 'test')"), db: Session = Depends(get_db)):
+def get_user_prizes(wallet_address: str = Query(default="0x0000000000000000000000000000000000000000.5DAAnrj7VHTz5AnBZdMjxqJ1ojTHev3VbyT9RCPVvfy5FeaY", description="Wallet address (defaults to 'test')"), db: Session = Depends(get_db)):
     """Get user prizes (defaults to test user)"""
     db_user = db.query(models.User).filter(models.User.wallet_address == wallet_address).first()
     if db_user is None:
@@ -302,7 +336,7 @@ def get_user_prizes(wallet_address: str = Query(default="test", description="Wal
 @app.post("/swaps/", response_model=schemas.SwapResponse)
 def create_swap(
     swap_data: schemas.TransactionCreate = schemas.TransactionCreate(), 
-    wallet_address: str = Query(default="test", description="Wallet address (defaults to 'test')"), 
+    wallet_address: str = Query(default="0x0000000000000000000000000000000000000000.5DAAnrj7VHTz5AnBZdMjxqJ1ojTHev3VbyT9RCPVvfy5FeaY", description="Wallet address (defaults to 'test')"), 
     db: Session = Depends(get_db)
 ):
     """
@@ -391,7 +425,7 @@ def get_game_configs():
 
 @app.post("/games/play/", response_model=schemas.GamePlay)
 def play_game(
-    wallet_address: str = Query(default="test", description="Wallet address (defaults to 'test')"), 
+    wallet_address: str = Query(default="0x0000000000000000000000000000000000000000.5DAAnrj7VHTz5AnBZdMjxqJ1ojTHev3VbyT9RCPVvfy5FeaY", description="Wallet address (defaults to 'test')"), 
     game_type: str = Query(default="loot_box", description="Game type (defaults to 'loot_box')"), 
     db: Session = Depends(get_db)
 ):
@@ -491,7 +525,7 @@ def fund_prize_pools(instant_amount: float = 0, game_amount: float = 0, platform
 
 @app.post("/rewards/claim", response_model=schemas.RewardClaim)
 def claim_reward(
-    wallet_address: str = Query(default="test", description="Wallet address (defaults to 'test')"), 
+    wallet_address: str = Query(default="0x0000000000000000000000000000000000000000.5DAAnrj7VHTz5AnBZdMjxqJ1ojTHev3VbyT9RCPVvfy5FeaY", description="Wallet address (defaults to 'test')"), 
     prize_id: int = Query(default=1, description="Prize ID (defaults to 1)"), 
     db: Session = Depends(get_db)
 ):
@@ -525,7 +559,7 @@ def delete_users(db: Session = Depends(get_db)):
 @app.post("/ai_agent")
 async def ai_agent(
     lottery_result: str = Query(default="lost", description="Result of the lottery ('win' or 'lost')"),
-    wallet_address: str = Query(default="test", description="Wallet address (defaults to 'test')")
+    wallet_address: str = Query(default="0x0000000000000000000000000000000000000000.5DAAnrj7VHTz5AnBZdMjxqJ1ojTHev3VbyT9RCPVvfy5FeaY", description="Wallet address (defaults to 'test')")
 ):
     if not API_KEY:
         raise HTTPException(status_code=500, detail="API_KEY not set in environment.")
