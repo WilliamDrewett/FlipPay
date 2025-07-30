@@ -9,7 +9,7 @@
 <!-- --------------------------------------- CONTENT -->
 <div class="min-h-screen w-full flex flex-col">
 	<Header />
-	<main class="flex w-full flex-col items-center justify-center h-full">
+	<main class="flex w-full my-auto flex-col items-center justify-center h-full">
 		{@render children()}
 	</main>
 	<Footer />

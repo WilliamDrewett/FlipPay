@@ -6,6 +6,7 @@
 	import Details from './Details.svelte';
     import { Tween } from 'svelte/motion';
 	import { cubicOut } from 'svelte/easing';
+	import { createUser } from '$lib/api/createUser';
 
 	let playAuto = $state(true);
 
@@ -35,6 +36,12 @@
     $effect(() => {
         autoReloadInterval();
     });
+
+	async function handleSwap() {
+		console.log('swap');
+		const user = await createUser("chat");
+		console.log(user);
+	}
 </script>
 
 <!-- --------------------------------------- CONTENT -->
@@ -67,7 +74,7 @@
 					</div>
 				</button>
 			</div>
-			<BlockchainInput source={false} blockchain="POL" />
+			<BlockchainInput source={false} blockchain="DOT" />
 			<Details blockchain="ETH" source={true} />
 		</div>
 		<div class="flex w-full items-center justify-between gap-2">
@@ -77,7 +84,7 @@
 			</div>
 			<p class="text-base-content text-xs">Spent directly my flip points</p>
 		</div>
-		<button class="btn btn-primary w-full rounded-2xl text-white">
+		<button class="btn btn-primary w-full rounded-2xl text-white" onclick={handleSwap}>
 			{playAuto ? 'Swap and Play' : 'Swap'}
 		</button>
 	</div>

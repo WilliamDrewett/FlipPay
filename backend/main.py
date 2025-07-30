@@ -32,7 +32,7 @@ INSTANT_POOL_RATE = 0.001  # 0.1%
 GAME_POOL_RATE = 0.001     # 0.1%
 PLATFORM_RATE = 0.001      # 0.1%
 FREE_SWAP_CHANCE = 0.005   # 0.5% chance for free swap
-POINTS_PER_DOLLAR = 0.1    # $10 = 1 point
+POINTS_PER_DOLLAR = 1.0    # $1 = 1 point
 
 # ---------------------------------------------------------------------------
 #  Helper utilities
@@ -64,6 +64,24 @@ GAME_CONFIGS = {
         "cost_points": 25,
         "win_probability": 0.1,
         "available_prizes": ["Epic NFT Collection", "500 Tokens", "250 Tokens", "100 Tokens"]
+    },
+    "loot_box": {
+        # Cost to open one box
+        "cost_points": 250,
+        # Probability distribution for rarities (must sum to 1.0)
+        "rarity_probabilities": {
+            "Common": 0.60,
+            "Uncommon": 0.25,
+            "Rare": 0.10,
+            "Legendary": 0.05
+        },
+        # Prizes available per rarity
+        "prizes_by_rarity": {
+            "Common": ["Sticker Pack", "10 Points"],
+            "Uncommon": ["25 Tokens", "Wearable NFT"],
+            "Rare": ["100 Tokens", "Rare NFT"],
+            "Legendary": ["500 Tokens", "Legendary NFT"]
+        }
     }
 }
 
@@ -276,8 +294,9 @@ def get_user_prizes(wallet_address: str = Query(default="test", description="Wal
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Filter for only winning game plays
-    prizes = [gp for gp in db_user.game_plays if gp.outcome == "win"]
+    # Return all game plays that awarded a prize (prize not null).
+    # This includes spin-wheel wins as well as loot-box outcomes like "common" or "rare".
+    prizes = [gp for gp in db_user.game_plays if gp.prize is not None]
     return prizes
 
 @app.post("/swaps/", response_model=schemas.SwapResponse)
@@ -373,7 +392,7 @@ def get_game_configs():
 @app.post("/games/play/", response_model=schemas.GamePlay)
 def play_game(
     wallet_address: str = Query(default="test", description="Wallet address (defaults to 'test')"), 
-    game_type: str = Query(default="spin_wheel", description="Game type (defaults to 'spin_wheel')"), 
+    game_type: str = Query(default="loot_box", description="Game type (defaults to 'loot_box')"), 
     db: Session = Depends(get_db)
 ):
     """
@@ -395,30 +414,52 @@ def play_game(
         raise HTTPException(status_code=400, detail=f"Not enough points. Need {cost_to_play}, have {db_user.points}")
 
     db_user.points -= cost_to_play
-    
-    # Run game with configured win probability
-    win = random.random() < game_config["win_probability"]
-    outcome = "win" if win else "lose"
-    
-    # Select prize if won
-    prize_won = None
-    if win:
-        prize_won = random.choice(game_config["available_prizes"])
-        # If the prize is tokens or points, add to user balance
-        if "Token" in prize_won:
-            # Extract the number of tokens from the prize string
+
+    # -------------------------------------------------------------
+    #  Special handling for the new loot_box game type
+    # -------------------------------------------------------------
+    if game_type == "loot_box":
+        # Roll rarity based on configured probabilities
+        roll = random.random()
+        cumulative = 0.0
+        rarity_selected = None
+        for rarity, prob in game_config["rarity_probabilities"].items():
+            cumulative += prob
+            if roll <= cumulative:
+                rarity_selected = rarity
+                break
+        # Fallback (shouldn't happen if probs sum to 1)
+        if rarity_selected is None:
+            rarity_selected = "Common"
+
+        prize_won = random.choice(game_config["prizes_by_rarity"][rarity_selected])
+        outcome = rarity_selected.lower()  # e.g. "legendary"
+    else:
+        # ---------------------------------------------------------
+        #  Existing game logic (spin_wheel, mystery_box, nft_crate)
+        # ---------------------------------------------------------
+        win = random.random() < game_config.get("win_probability", 1.0)
+        outcome = "win" if win else "lose"
+        prize_won = None
+        if win:
+            prize_won = random.choice(game_config["available_prizes"])
+
+    # -------------------------------------------------------------
+    #  Apply prize effects (token / point rewards)
+    # -------------------------------------------------------------
+    if prize_won:
+        if "Token" in prize_won or "Tokens" in prize_won:
             import re
             match = re.search(r"(\d+)", prize_won)
             if match:
                 tokens = int(match.group(1))
                 db_user.points += tokens
-        elif "point" in prize_won.lower():
-            # If prize mentions points, extract and add
+        elif "point" in prize_won.lower() or "points" in prize_won.lower():
             import re
             match = re.search(r"(\d+)", prize_won)
             if match:
-                points = int(match.group(1))
-                db_user.points += points
+                pts = int(match.group(1))
+                db_user.points += pts
 
     game_play = models.GamePlay(
         user_id=db_user.id, 
