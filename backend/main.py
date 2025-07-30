@@ -10,6 +10,7 @@ import httpx
 from pydantic import BaseModel
 import asyncio
 import subprocess
+from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
@@ -17,6 +18,22 @@ API_KEY = os.getenv("API_KEY")
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+# -------------------------------
+# CORS configuration
+# -------------------------------
+origins = [
+    "http://localhost:5173",  # local frontend
+    "https://flippay-production.up.railway.app"  # production frontend
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Dependency
 def get_db():
