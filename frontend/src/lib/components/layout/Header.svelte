@@ -32,9 +32,9 @@
 		// Get the connected wallet address (prioritize Ethereum, then Polkadot)
 		const currentEthereumAddress = $ethereumAddress;
 		const currentPolkadotAddress = $polkadotAddress;
-		
+
 		const walletAddress = currentEthereumAddress || currentPolkadotAddress;
-		
+
 		if (!walletAddress) {
 			balance.set(null);
 			return;
@@ -52,10 +52,10 @@
 	// Function to start balance polling
 	function startBalancePolling() {
 		if (balancePollingInterval) return; // Already polling
-		
+
 		// Fetch balance immediately
 		fetchAndUpdateBalance();
-		
+
 		// Set up interval to fetch balance every second
 		balancePollingInterval = setInterval(fetchAndUpdateBalance, 1000);
 	}
@@ -231,9 +231,7 @@
 			<button class="btn btn-outline btn-sm btn-success rounded-full" disabled>
 				<Icon icon="ri:gemini-fill" color="white" width="18" height="18" />
 				{#if !$isEthereumConnected && !$isPolkadotConnected}
-				<span class="hidden text-white md:block opacity-50">
-					0
-				</span>
+					<span class="hidden text-white opacity-50 md:block"> 0 </span>
 				{:else if $balance !== null}
 					<span class="hidden text-white md:block">
 						{$balance}
@@ -262,16 +260,20 @@
 					{$isPolkadotConnected ? formatAddress($polkadotAddress || '') : 'Connect Polkadot Wallet'}
 				</span>
 			</button>
-			<button class="btn-rotate btn btn-sm btn-accent btn-ghost w-8 rounded-full p-0">
-				<div>
-					<Icon icon="material-symbols:settings" color="white" width="20" height="20" />
-				</div>
-			</button>
-			<button class="btn-flip-x btn btn-sm btn-accent btn-ghost w-8 rounded-full p-0">
-				<div>
-					<Icon icon="ix:about" color="white" width="20" height="20" />
-				</div>
-			</button>
+			<a href="/settings">
+				<button class="btn-rotate btn btn-sm btn-accent btn-ghost w-8 rounded-full p-0">
+					<div>
+						<Icon icon="material-symbols:settings" color="white" width="20" height="20" />
+					</div>
+				</button>
+			</a>
+			<a href="/about">
+				<button class="btn-flip-x btn btn-sm btn-accent btn-ghost w-8 rounded-full p-0">
+					<div>
+						<Icon icon="ix:about" color="white" width="20" height="20" />
+					</div>
+				</button>
+			</a>
 		</div>
 	</div>
 	<!-- <div class="bg-black/50 w-full text-sm text-white">
