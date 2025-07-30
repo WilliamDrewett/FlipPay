@@ -211,8 +211,8 @@
 						</a>
 					</li>
 					<li>
-						<a href="/loot">
-							<p>Loot</p>
+						<a href="/prizes">
+							<p>Prizes</p>
 						</a>
 					</li>
 					<li>
