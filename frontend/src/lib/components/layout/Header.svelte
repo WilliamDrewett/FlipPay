@@ -211,6 +211,11 @@
 						</a>
 					</li>
 					<li>
+						<a href="/leaderboard">
+							<p>Leaderboard</p>
+						</a>
+					</li>
+					<li>
 						<a href="/prizes">
 							<p>Prizes</p>
 						</a>
