@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install -y curl ca-certificates gnupg \
 
 # Install bridge NPM dependencies
 COPY backend/bridges/package*.json ./bridges/
-RUN cd bridges && npm ci --omit=dev
+RUN cd bridges && npm install --omit=dev
 
 # Copy the entire backend directory (Python sources)
 COPY backend/ ./
