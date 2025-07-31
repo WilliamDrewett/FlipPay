@@ -92,7 +92,8 @@ out
 .nuxt
 dist
 
-
+contracts/lib/
+lib/*
 broadcast/*
 broadcast/
 
