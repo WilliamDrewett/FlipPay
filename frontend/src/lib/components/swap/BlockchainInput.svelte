@@ -2,7 +2,7 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
 
-	let { source, blockchain }: { source: boolean; blockchain: 'ETH' | 'DOT' } = $props();
+	let { source, blockchain, spotPrice }: { source: boolean; blockchain: 'ETH' | 'DOT'; spotPrice: number } = $props();
 </script>
 
 <!-- --------------------------------------- CONTENT -->
@@ -42,7 +42,7 @@
 				Polkadot
 			{/if}
 		</p>
-		<p class="text-sm text-white">~ 0.00$</p>
+		<p class="text-sm text-white">~ {spotPrice.toFixed(2)}$</p>
 	</div>
 	<div
 		class="absolute bottom-0 left-0 h-10 -mb-10 w-[200%] bg-gradient-to-r from-transparent"

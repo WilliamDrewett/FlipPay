@@ -72,6 +72,24 @@ class GameConfig(BaseModel):
     win_probability: float
     available_prizes: List[str]
 
+# Price schemas
+class TokenPrice(BaseModel):
+    token: str
+    price_usd: float
+    chain_id: int
+    source: str
+    timestamp: int
+
+class PriceResponse(BaseModel):
+    success: bool
+    data: Optional[TokenPrice] = None
+    error: Optional[str] = None
+
+class MultiPriceResponse(BaseModel):
+    success: bool
+    data: Optional[dict] = None
+    error: Optional[str] = None
+
 # Available token symbols for swaps
 AVAILABLE_TOKENS = [
     "ETH", "AAVE", "sUSDe", "tBTC", "TRAC", "LBTC", 

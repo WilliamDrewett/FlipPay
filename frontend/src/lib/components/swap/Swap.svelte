@@ -7,10 +7,11 @@
     import { Tween } from 'svelte/motion';
 	import { cubicOut } from 'svelte/easing';
 	import { createUser } from '$lib/api/createUser';
-
+	import { getEthAndDotPrices } from '$lib/api/getSpotPrices';
 	let playAuto = $state(true);
 
     const AUTO_RELOAD_TIME = 10;
+	let swapDirection = $state<'ETH_TO_DOT' | 'DOT_TO_ETH'>('ETH_TO_DOT');
 
     let autoReloadSec = $state(AUTO_RELOAD_TIME);
     let autoReload = new Tween(AUTO_RELOAD_TIME, {
@@ -18,7 +19,17 @@
 		easing: cubicOut
 	});
 
+	let ethSpotPrice = $state(0);
+	let dotSpotPrice = $state(0);
+
 	function handleRefresh() {
+		getEthAndDotPrices().then((prices) => {
+			console.log(prices);
+			ethSpotPrice = prices.eth?.price_usd || 0;
+			dotSpotPrice = prices.dot?.price_usd || 0;
+		}).catch((error) => {
+			console.error(error);
+		});
         autoReloadSec = AUTO_RELOAD_TIME;
 		autoReload.set(AUTO_RELOAD_TIME);
 	}
@@ -41,6 +52,10 @@
 		console.log('swap');
 		const user = await createUser("chat");
 		console.log(user);
+	}
+
+	function handleSwapDirection() {
+		swapDirection = swapDirection === 'ETH_TO_DOT' ? 'DOT_TO_ETH' : 'ETH_TO_DOT';
 	}
 </script>
 
@@ -66,16 +81,22 @@
 	</header>
 	<div class="flex flex-col items-center justify-between gap-4 p-2">
 		<div class="flex w-full flex-col items-center justify-between gap-2">
-			<BlockchainInput source={true} blockchain="ETH" />
-			<div class="bg-base-100 z-10 -my-5 rounded-2xl">
-				<button class="btn-rotate btn btn-sm btn-accent btn-ghost w-8 rounded-full">
+			<div style="order: {swapDirection === 'ETH_TO_DOT' ? 1 : 3}" class="w-full">
+				<BlockchainInput source={true} blockchain="ETH" spotPrice={ethSpotPrice} />
+			</div>
+			<div class="bg-base-100 z-10 -my-5 rounded-2xl order-2">
+				<button class="btn-rotate btn btn-sm btn-accent btn-ghost w-8 rounded-full" onclick={handleSwapDirection}>
 					<div>
 						<Icon icon="mdi:arrow-bottom" color="white" width="20" height="20" />
 					</div>
 				</button>
 			</div>
-			<BlockchainInput source={false} blockchain="DOT" />
-			<Details blockchain="ETH" source={true} />
+			<div style="order: {swapDirection === 'ETH_TO_DOT' ? 3 : 1}" class="w-full">
+				<BlockchainInput source={false} blockchain="DOT" spotPrice={dotSpotPrice} />
+			</div>
+			<div class="order-4 w-full">
+				<Details blockchain="ETH" source={true} />
+			</div>
 		</div>
 		<div class="flex w-full items-center justify-between gap-2">
 			<div class="flex items-center gap-2">

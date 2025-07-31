@@ -8,20 +8,19 @@ edition = "2021"
 [workspace]
 members = [
     "node",
-    "pallets/htlc",
+    "pallets/template",
     "runtime",
 ]
 resolver = "2"
 
 [workspace.dependencies]
 solochain-template-runtime = { path = "./runtime", default-features = false }
-pallet-template = { path = "./pallets/htlc", default-features = false }
+pallet-template = { path = "./pallets/template", default-features = false }
 clap = { version = "4.5.13" }
 frame-benchmarking-cli = { version = "47.0.0", default-features = false }
 frame-metadata-hash-extension = { version = "0.8.0", default-features = false }
 frame-system = { version = "40.1.0", default-features = false }
 futures = { version = "0.3.31" }
-getrandom = { version = "0.2.16" }
 jsonrpsee = { version = "0.24.3" }
 pallet-transaction-payment = { version = "40.0.0", default-features = false }
 pallet-transaction-payment-rpc = { version = "43.0.0", default-features = false }
@@ -32,8 +31,7 @@ sc-consensus = { version = "0.48.0", default-features = false }
 sc-consensus-aura = { version = "0.49.0", default-features = false }
 sc-consensus-grandpa = { version = "0.34.0", default-features = false }
 sc-executor = { version = "0.42.0", default-features = false }
-sc-network = { version = "0.49.0", default-features = false }
-sc-network-types = { version = "0.49.0", default-features = false }
+sc-network = { version = "0.49.1", default-features = false }
 sc-offchain = { version = "44.0.0", default-features = false }
 sc-service = { version = "0.50.0", default-features = false }
 sc-telemetry = { version = "28.1.0", default-features = false }
@@ -49,7 +47,6 @@ sp-inherents = { version = "36.0.0", default-features = false }
 sp-io = { version = "40.0.1", default-features = false }
 sp-keyring = { version = "41.0.0", default-features = false }
 sp-runtime = { version = "41.1.0", default-features = false }
-sp-std = { version = "14.0.0", default-features = false }
 sp-timestamp = { version = "36.0.0", default-features = false }
 substrate-frame-rpc-system = { version = "43.0.0", default-features = false }
 substrate-build-script-utils = { version = "11.0.0", default-features = false }

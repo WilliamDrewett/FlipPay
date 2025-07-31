@@ -42,7 +42,7 @@ use sp_version::RuntimeVersion;
 use super::{
 	AccountId, Aura, Balance, Balances, Block, BlockNumber, Hash, Nonce, PalletInfo, Runtime,
 	RuntimeCall, RuntimeEvent, RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeTask,
-	System, EXISTENTIAL_DEPOSIT, SLOT_DURATION, VERSION,
+	System, EXISTENTIAL_DEPOSIT, SLOT_DURATION, VERSION, MINUTES,
 };
 
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
@@ -157,8 +157,19 @@ impl pallet_sudo::Config for Runtime {
 	type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
 }
 
+// HTLC pallet configuration parameters
+parameter_types! {
+	/// Minimum timelock duration (10 minutes)
+	pub const MinTimelock: BlockNumber = 10 * MINUTES;
+	/// Maximum timelock duration (7 days)
+	pub const MaxTimelock: BlockNumber = 7 * 24 * 60 * MINUTES;
+}
+
 /// Configure the pallet-template in pallets/template.
 impl pallet_template::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = pallet_template::weights::SubstrateWeight<Runtime>;
+	type Currency = Balances;
+	type MinTimelock = MinTimelock;
+	type MaxTimelock = MaxTimelock;
+	type WeightInfo = pallet_template::SubstrateWeight<Runtime>;
 }

@@ -11,6 +11,7 @@ from pydantic import BaseModel
 import asyncio
 import subprocess
 from fastapi.middleware.cors import CORSMiddleware
+from services.price_service import PriceService
 
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
@@ -18,6 +19,9 @@ API_KEY = os.getenv("API_KEY")
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+# Initialize services
+price_service = PriceService()
 
 # -------------------------------
 # CORS configuration
