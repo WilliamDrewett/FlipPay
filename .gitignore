@@ -26,3 +26,6 @@ Thumbs.db
 .pdm-python
 .pytest_cache/
 /backend/8.1.1 
+
+# Substrate
+target/

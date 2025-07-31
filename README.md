@@ -52,12 +52,44 @@ The calls below showcase a full user journey using the default **loot-box** game
 
 ---
 
-## EVM HTLC Smart contracts
+## EVM HTLC Contracts
+### Limit order protocol contract deployed at 0x6af572bE6497d4Da120e51f310c6839E211E97AA
 
-Escrow contract deployed at: 0x47E5517c1Ea689c7D1c7144eF9d2A16bC22E90cd
+### Escrow contract deployed at: 0xd27Cbab8E34b8D6d9769BD557769bA96909cd390
+### Resolver contract deployed at: 0xF6b928896E57955727C29d33a3B716C25E10A4e4
+### EscrowSrc contract deployed at: 0x7D9bE409CAff73C6aa0E3eBe7e02393d678ecc46
+### EscrowDst contract deployed at: 0xEc714A9f9e094B881e6B8087F51C6e03Dc6A500b
 
-Polkadot verifier deployed at: 0x27413D304841759D366083500c3a7FA01B098725
+> All contracts in the EVM side have been deployed on Ethereum Sepolia
 
-EscrowSrc deployed at: 0x366992C38D2aC17c6e237efcD1a1F47Ff37cf353
+## Substrate
 
-EscrowDst deployed at: 0x85858ffae302c819817631b84cB143Ae32fDD337
+Spin up a local solochain to demonstrate HTLC
+
+First, build the node without launching it:
+
+```
+cargo build --release
+```
+
+Use the following command to start a single node development chain
+```
+./target/release/solochain-template-node --dev --rpc-methods=Unsafe --rpc-port 9933
+```
+
+Run the following command to check if the chain is running 
+
+```
+curl http://127.0.0.1:9933 -H "Content-Type: application/json" -d '{
+  "jsonrpc":"2.0",
+  "method":"system_chain",
+  "params":[],
+  "id":1
+}'
+```
+
+It should return something like this
+
+```
+{"jsonrpc":"2.0","id":1,"result":"Development"}
+```
