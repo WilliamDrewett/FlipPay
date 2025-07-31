@@ -1,5 +1,5 @@
 [package]
-name = "htlc-pallet"
+name = "pallet-template"
 description = "FRAME pallet template for defining custom runtime logic."
 version = "0.1.0"
 license = "Unlicense"
@@ -18,9 +18,10 @@ frame-benchmarking = { optional = true, workspace = true }
 frame-support.workspace = true
 frame-system.workspace = true
 scale-info = { features = ["derive"], workspace = true }
-sp-std.workspace = true
-sp-runtime.workspace = true
-sp-io.workspace = true
+# Direct dependencies (not from workspace)
+sp-std = { version = "14.0.0", default-features = false }
+sp-runtime = { version = "41.1.0", default-features = false }
+sp-io = { version = "40.0.1", default-features = false }
 
 [dev-dependencies]
 sp-core = { default-features = true, workspace = true }
