@@ -7,16 +7,49 @@ use frame_support::{
     BoundedVec,
 };
 use frame_system::pallet_prelude::*;
-use sp_std::{vec::Vec, collections::btree_map::BTreeMap};
+use sp_std::vec::Vec;
 use sp_runtime::{
-    traits::{Zero, BlakeTwo256, Hash},
-    RuntimeDebug, DispatchError,
+    traits::{Zero},
+    RuntimeDebug,
 };
 use sp_io::hashing::keccak_256;
 use codec::{Encode, Decode, MaxEncodedLen};
 use scale_info::TypeInfo;
 
 pub use pallet::*;
+
+/// Weight functions needed for pallet_template.
+pub trait WeightInfo {
+    fn new_htlc() -> Weight;
+    fn withdraw() -> Weight;
+    fn refund() -> Weight;
+    fn batch_new_htlc() -> Weight;
+    fn set_trusted_relayer() -> Weight;
+    fn create_from_ethereum() -> Weight;
+}
+
+/// Default weight implementation for pallet_template.
+pub struct SubstrateWeight<T>(core::marker::PhantomData<T>);
+impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
+    fn new_htlc() -> Weight {
+        Weight::from_parts(10_000, 0)
+    }
+    fn withdraw() -> Weight {
+        Weight::from_parts(10_000, 0)
+    }
+    fn refund() -> Weight {
+        Weight::from_parts(10_000, 0)
+    }
+    fn batch_new_htlc() -> Weight {
+        Weight::from_parts(50_000, 0)
+    }
+    fn set_trusted_relayer() -> Weight {
+        Weight::from_parts(10_000, 0)
+    }
+    fn create_from_ethereum() -> Weight {
+        Weight::from_parts(15_000, 0)
+    }
+}
 
 type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
@@ -76,6 +109,8 @@ pub mod pallet {
         type Currency: Currency<Self::AccountId> + ReservableCurrency<Self::AccountId>;
         type MinTimelock: Get<BlockNumberFor<Self>>;
         type MaxTimelock: Get<BlockNumberFor<Self>>;
+        /// Weight information for extrinsics in this pallet.
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]
@@ -192,7 +227,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Create a new Hash Time Lock Contract
         #[pallet::call_index(0)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(T::WeightInfo::new_htlc())]
         pub fn new_htlc(
             origin: OriginFor<T>,
             recipient: T::AccountId,
@@ -263,7 +298,7 @@ pub mod pallet {
 
         /// Withdraw funds from HTLC by revealing preimage
         #[pallet::call_index(1)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(T::WeightInfo::withdraw())]
         pub fn withdraw(
             origin: OriginFor<T>,
             hashlock: [u8; 32],
@@ -282,9 +317,10 @@ pub mod pallet {
             let current_block = <frame_system::Pallet<T>>::block_number();
             ensure!(current_block < htlc.timelock, Error::<T>::TimelockExpired);
 
-            // Verify preimage
-            let computed_hashlock = keccak_256(&preimage.to_vec());
-            ensure!(computed_hashlock == hashlock, Error::<T>::InvalidPreimage);
+            // Verify preimage - Fixed the type issue
+            let preimage_bytes: &[u8] = &preimage;
+            let computed_hashlock: [u8; 32] = keccak_256(preimage_bytes);
+            ensure!(computed_hashlock == htlc.hashlock, Error::<T>::InvalidPreimage);
 
             // Update HTLC state
             htlc.withdrawn = true;
@@ -315,7 +351,7 @@ pub mod pallet {
 
         /// Refund HTLC after timelock expires
         #[pallet::call_index(2)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(T::WeightInfo::refund())]
         pub fn refund(
             origin: OriginFor<T>,
             hashlock: [u8; 32],
@@ -354,7 +390,7 @@ pub mod pallet {
 
         /// Batch create multiple HTLCs (for efficiency)
         #[pallet::call_index(3)]
-        #[pallet::weight(50_000)]
+        #[pallet::weight(T::WeightInfo::batch_new_htlc())]
         pub fn batch_new_htlc(
             origin: OriginFor<T>,
             htlcs: Vec<(T::AccountId, [u8; 32], BlockNumberFor<T>, BalanceOf<T>, Option<[u8; 32]>)>,
@@ -379,7 +415,7 @@ pub mod pallet {
 
         /// Set trusted relayer (only root)
         #[pallet::call_index(4)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(T::WeightInfo::set_trusted_relayer())]
         pub fn set_trusted_relayer(
             origin: OriginFor<T>,
             relayer: T::AccountId,
@@ -398,7 +434,7 @@ pub mod pallet {
 
         /// Create HTLC from Ethereum event (relayer only)
         #[pallet::call_index(5)]
-        #[pallet::weight(15_000)]
+        #[pallet::weight(T::WeightInfo::create_from_ethereum())]
         pub fn create_from_ethereum(
             origin: OriginFor<T>,
             recipient: T::AccountId,
