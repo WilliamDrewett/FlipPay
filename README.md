@@ -52,6 +52,84 @@ The calls below showcase a full user journey using the default **loot-box** game
 
 ---
 
+## 1inch API Integration
+
+The FlipPay backend includes a comprehensive proxy for all [1inch APIs](https://portal.1inch.dev/documentation/apis). This proxy allows you to access any 1inch service by appending the API path to our base endpoint.
+
+### How the Proxy Works
+
+- **Base URL**: `http://localhost:8000/oneinch/`
+- **1inch Base**: `https://api.1inch.dev`
+- **Pattern**: Any path after `/oneinch/` gets forwarded to the corresponding 1inch API endpoint
+- **Authentication**: Automatically handled with Bearer token from `ONEINCH_KEY` environment variable
+- **Methods**: Supports both GET and POST requests
+
+### Available Services
+
+The proxy reflects all services available at the [1inch Developer Portal](https://portal.1inch.dev/documentation/apis):
+
+- **Swap API** - Token swaps and quotes
+- **Token API** - Token information and search
+- **Balance API** - Wallet balance queries
+- **Spot Price API** - Real-time token prices
+- **Portfolio API** - Portfolio analytics
+- **NFT API** - NFT data
+- **Fusion API** - Gasless swaps
+- And many more...
+
+### Examples
+
+#### 1. List Available ETH Tokens
+
+Get all tokens available on Ethereum mainnet:
+
+```bash
+curl "http://localhost:8000/oneinch/token/v1.2/1"
+```
+
+**Response**: Complete token registry including ETH, USDC, USDT, DAI, WETH, UNI, AAVE, etc.
+
+#### 2. Search for Specific Tokens
+
+```bash
+curl "http://localhost:8000/oneinch/token/v1.2/1/search?query=USDC"
+```
+
+#### 3. Get Token Quote/Price
+
+Get live swap quote (1 ETH → USDC):
+
+```bash
+curl "http://localhost:8000/oneinch/swap/v5.2/1/quote?fromTokenAddress=0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE&toTokenAddress=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&amount=1000000000000000000"
+```
+
+**Response**: `{"toAmount":"3525446392"}` (≈3,525 USDC for 1 ETH)
+
+#### 4. Execute Swap (POST)
+
+```bash
+curl -X POST "http://localhost:8000/oneinch/swap/v5.2/1/swap" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fromTokenAddress": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+    "toTokenAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    "amount": "1000000000000000000",
+    "fromAddress": "0x...",
+    "slippage": 1
+  }'
+```
+
+### Token Addresses (Ethereum Mainnet)
+
+- **ETH**: `0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE`
+- **USDC**: `0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48`
+- **USDT**: `0xdac17f958d2ee523a2206206994597c13d831ec7`
+- **DAI**: `0x6b175474e89094c44da98b954eedeac495271d0f`
+- **WETH**: `0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2`
+
+
+---
+
 ## EVM HTLC Contracts
 ### Limit order protocol contract deployed at 0x6af572bE6497d4Da120e51f310c6839E211E97AA
 
