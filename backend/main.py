@@ -8,6 +8,7 @@ import random
 from fastapi.responses import JSONResponse
 import httpx
 from pydantic import BaseModel
+from typing import Optional
 import asyncio
 import subprocess
 from fastapi.middleware.cors import CORSMiddleware
@@ -878,6 +879,208 @@ async def execute_bridge(req: BridgeRequest):
         returncode=process.returncode,
     )
 
+# StarkGate supported tokens and bridges
+STARKGATE_TOKENS = {
+    "mainnet": {
+        "ETH": {
+            "address": "0x0000000000000000000000000000000000000000",
+            "bridge": "0xae0ee0a63a2ce6baeeffe56e7714fb4efe48d419",
+            "decimals": 18,
+            "symbol": "ETH"
+        },
+        "USDC": {
+            "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "bridge": "0xf6080d9fbeebcd44d89affbfd42f098cbff92816",
+            "decimals": 6,
+            "symbol": "USDC"
+        },
+        "USDT": {
+            "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+            "bridge": "0xbb3400f107804dfb482565ff1ec8d8ae66747605",
+            "decimals": 6,
+            "symbol": "USDT"
+        },
+        "STRK": {
+            "address": "0xCa14007Eff0dB1f8135f4C25B34De49AB0d42766",
+            "bridge": "0xce5485cfb26914c5dce00b9baf0580364dafc7a4",
+            "decimals": 18,
+            "symbol": "STRK"
+        }
+    },
+    "sepolia": {
+        "ETH": {
+            "address": "0x0000000000000000000000000000000000000000",
+            "bridge": "0xae0ee0a63a2ce6baeeffe56e7714fb4efe48d419",
+            "decimals": 18,
+            "symbol": "ETH"
+        },
+        "USDC": {
+            "address": "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8",
+            "bridge": "0xf6080d9fbeebcd44d89affbfd42f098cbff92816",
+            "decimals": 6,
+            "symbol": "USDC"
+        }
+    }
+}
+
+class StarkGateBridgeRequest(BaseModel):
+    network: str = "sepolia"  # "sepolia" or "mainnet"
+    token_symbol: str = "USDC"  # "ETH", "USDC", "USDT", "STRK"
+    amount: float = 1.0  # Amount in human-readable format (e.g., 1.5 USDC)
+    starknet_recipient: str = "0x1234567890123456789012345678901234567890123456789012345678901234"
+    dry_run: bool = True  # Set to False for real transactions
+
+class StarkGateBridgeResponse(BaseModel):
+    success: bool
+    transaction_hash: Optional[str] = None
+    error: Optional[str] = None
+    amount_bridged: Optional[str] = None
+    token_info: Optional[dict] = None
+    network_info: Optional[dict] = None
+    gas_used: Optional[str] = None
+
+@app.get("/bridge/starkgate/tokens")
+def get_starkgate_supported_tokens():
+    """Get list of tokens supported by StarkGate bridge"""
+    return {
+        "supported_tokens": STARKGATE_TOKENS,
+        "networks": ["sepolia", "mainnet"],
+        "note": "Use token symbols (ETH, USDC, etc.) in bridge requests"
+    }
+
+@app.post("/bridge/starkgate", response_model=StarkGateBridgeResponse)
+async def execute_starkgate_bridge(req: StarkGateBridgeRequest):
+    """
+    Bridge tokens from Ethereum to Starknet using StarkGate.
+    
+    Frontend-friendly endpoint that:
+    - Accepts human-readable amounts (e.g., 1.5 USDC)
+    - Uses token symbols instead of addresses
+    - Provides clear success/error responses
+    - Supports both testnet and mainnet
+    """
+    try:
+        # Validate network
+        if req.network not in STARKGATE_TOKENS:
+            return StarkGateBridgeResponse(
+                success=False,
+                error=f"Unsupported network: {req.network}. Supported: {list(STARKGATE_TOKENS.keys())}"
+            )
+        
+        # Validate token
+        if req.token_symbol not in STARKGATE_TOKENS[req.network]:
+            supported = list(STARKGATE_TOKENS[req.network].keys())
+            return StarkGateBridgeResponse(
+                success=False,
+                error=f"Token {req.token_symbol} not supported on {req.network}. Supported: {supported}"
+            )
+        
+        token_info = STARKGATE_TOKENS[req.network][req.token_symbol]
+        
+        # Convert human-readable amount to smallest units
+        decimals = token_info["decimals"]
+        amount_wei = int(req.amount * (10 ** decimals))
+        
+        # Validate minimum amount (prevent dust transactions)
+        min_amount = 10 ** (decimals - 3)  # 0.001 for most tokens
+        if amount_wei < min_amount:
+            return StarkGateBridgeResponse(
+                success=False,
+                error=f"Amount too small. Minimum: {min_amount / (10 ** decimals)} {req.token_symbol}"
+            )
+        
+        # Prepare environment variables
+        env = os.environ.copy()
+        if req.dry_run:
+            env["SMOKE_TEST"] = "1"
+        
+        # Ensure required keys are set
+        if not env.get("ETHEREUM_KEY"):
+            return StarkGateBridgeResponse(
+                success=False,
+                error="ETHEREUM_KEY environment variable not set"
+            )
+        
+        if not env.get("INFURA_KEY"):
+            return StarkGateBridgeResponse(
+                success=False,
+                error="INFURA_KEY environment variable not set"
+            )
+        
+        # Execute bridge script
+        script_path = "bridges/scripts/bridgeEthToStarknet.ts"
+        cmd = [
+            "npx", "ts-node", script_path,
+            req.network,
+            token_info["address"],
+            req.starknet_recipient,
+            str(amount_wei),
+        ]
+        
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
+            cwd="/app",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            env=env,
+        )
+        
+        stdout_bytes, stderr_bytes = await process.communicate()
+        stdout = stdout_bytes.decode()
+        stderr = stderr_bytes.decode()
+        
+        # Parse results
+        if process.returncode == 0:
+            # Extract transaction hash from output
+            tx_hash = None
+            gas_used = None
+            
+            for line in stdout.split('\n'):
+                if 'Transaction hash:' in line:
+                    tx_hash = line.split('Transaction hash:')[1].strip()
+                elif 'Gas used:' in line:
+                    gas_used = line.split('Gas used:')[1].strip()
+            
+            return StarkGateBridgeResponse(
+                success=True,
+                transaction_hash=tx_hash,
+                amount_bridged=f"{req.amount} {req.token_symbol}",
+                token_info=token_info,
+                network_info={
+                    "network": req.network,
+                    "bridge_contract": token_info["bridge"],
+                    "token_contract": token_info["address"]
+                },
+                gas_used=gas_used
+            )
+        else:
+            # Parse error from stderr or stdout
+            error_msg = stderr.strip() if stderr.strip() else stdout.strip()
+            if "TOKEN_NOT_SERVICED" in error_msg:
+                error_msg = f"Token {req.token_symbol} not supported by StarkGate bridge"
+            elif "insufficient funds" in error_msg.lower():
+                error_msg = "Insufficient ETH balance for gas fees"
+            elif "invalid private key" in error_msg.lower():
+                error_msg = "Invalid ETHEREUM_KEY configuration"
+            
+            return StarkGateBridgeResponse(
+                success=False,
+                error=error_msg,
+                token_info=token_info,
+                network_info={
+                    "network": req.network,
+                    "bridge_contract": token_info["bridge"],
+                    "token_contract": token_info["address"]
+                }
+            )
+            
+    except Exception as e:
+        return StarkGateBridgeResponse(
+            success=False,
+            error=f"Internal error: {str(e)}"
+        )
+
+# Legacy endpoint (kept for backward compatibility)
 class StarknetBridgeRequest(BaseModel):
     environment: str = "sepolia"
     token_contract: str
@@ -892,6 +1095,7 @@ class StarknetBridgeResponse(BaseModel):
 
 @app.post("/bridge/starknet", response_model=StarknetBridgeResponse)
 async def execute_starknet_bridge(req: StarknetBridgeRequest):
+    """Legacy StarkGate bridge endpoint - use /bridge/starkgate instead"""
     script_path = "bridges/scripts/bridgeEthToStarknet.ts"
     cmd = [
         "npx", "ts-node", script_path,
