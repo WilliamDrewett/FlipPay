@@ -15,6 +15,7 @@ from services.price_service import PriceService
 
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
+ONEINCH_KEY = os.getenv("ONEINCH_KEY")
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -293,6 +294,95 @@ async def hydradx_proxy(path: str, request: Request):
         resp = await client.get(target_url, params=query_params, timeout=10)
         resp.raise_for_status()
         return resp.json()
+
+# ---------------------------------------------------------------------------
+#  1inch API integration (dynamic wrapper for all endpoints)
+# ---------------------------------------------------------------------------
+ONEINCH_BASE = "https://api.1inch.dev"
+
+
+@app.get("/oneinch/{path:path}")
+async def oneinch_proxy_get(path: str, request: Request):
+    """
+    Dynamic wrapper for all 1inch API GET endpoints.
+    Forwards any path under /oneinch/ to the 1inch API.
+    
+    Examples:
+    - /oneinch/swap/v5.2/1/quote -> https://api.1inch.dev/swap/v5.2/1/quote
+    - /oneinch/balance/v1.2/1/0x... -> https://api.1inch.dev/balance/v1.2/1/0x...
+    - /oneinch/token/v1.2/1/search -> https://api.1inch.dev/token/v1.2/1/search
+    """
+    if not ONEINCH_KEY:
+        raise HTTPException(status_code=500, detail="ONEINCH_KEY not set in environment.")
+    
+    # Build the target URL
+    target_url = f"{ONEINCH_BASE}/{path}"
+    
+    # Forward query parameters
+    query_params = dict(request.query_params)
+    
+    # Set up headers with Bearer authentication
+    headers = {
+        "Authorization": f"Bearer {ONEINCH_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            resp = await client.get(target_url, params=query_params, headers=headers, timeout=10)
+            resp.raise_for_status()
+            return resp.json()
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"1inch API error: {str(e)}")
+
+
+@app.post("/oneinch/{path:path}")
+async def oneinch_proxy_post(path: str, request: Request):
+    """
+    Dynamic wrapper for all 1inch API POST endpoints.
+    Forwards any path under /oneinch/ to the 1inch API.
+    
+    Examples:
+    - /oneinch/swap/v5.2/1/swap -> https://api.1inch.dev/swap/v5.2/1/swap
+    - /oneinch/orderbook/v4.0/1/order -> https://api.1inch.dev/orderbook/v4.0/1/order
+    - /oneinch/fusion/v1.0/1/order -> https://api.1inch.dev/fusion/v1.0/1/order
+    """
+    if not ONEINCH_KEY:
+        raise HTTPException(status_code=500, detail="ONEINCH_KEY not set in environment.")
+    
+    # Build the target URL
+    target_url = f"{ONEINCH_BASE}/{path}"
+    
+    # Forward query parameters
+    query_params = dict(request.query_params)
+    
+    # Get request body
+    body = await request.body()
+    
+    # Set up headers with Bearer authentication
+    headers = {
+        "Authorization": f"Bearer {ONEINCH_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            resp = await client.post(
+                target_url, 
+                params=query_params, 
+                headers=headers, 
+                content=body, 
+                timeout=10
+            )
+            resp.raise_for_status()
+            return resp.json()
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"1inch API error: {str(e)}")
+
 
 # ---------------------------------------------------------------------------
 #  FlipPay Endpoints
