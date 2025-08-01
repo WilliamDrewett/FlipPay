@@ -8,7 +8,7 @@ if [[ -f /app/bridges/package.json ]]; then
   echo "[smoke] Running Snowbridge validation test …"
   pushd /app/bridges > /dev/null
   # Provide default dummy keys if not supplied at runtime
-  export ETHEREUM_KEY=${ETHEREUM_KEY:-0x0000000000000000000000000000000000000000}
+  export ETHEREUM_KEY=${ETHEREUM_KEY:-0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
   export SUBSTRATE_KEY=${SUBSTRATE_KEY:-//Alice}
 
   # Environment overrides
@@ -20,8 +20,18 @@ if [[ -f /app/bridges/package.json ]]; then
     echo "[smoke] Bridge validation succeeded."
   else
     echo "[smoke] Bridge validation FAILED – continuing startup." >&2
-    # Non-fatal: continue starting backend
   fi
+
+  echo "[smoke] Running StarkGate validation test …"
+  export INFURA_KEY=${INFURA_KEY:-dummy}
+  export SMOKE_TEST=1
+  if npx ts-node scripts/bridgeEthToStarknet.ts sepolia 0x0000000000000000000000000000000000000000 0x0123 1000; then
+    echo "[smoke] StarkGate validation succeeded."
+  else
+    echo "[smoke] StarkGate validation FAILED – continuing startup." >&2
+  fi
+  unset SMOKE_TEST
+
   popd > /dev/null
 else
   echo "[smoke] Bridges package.json not found – skipping test."

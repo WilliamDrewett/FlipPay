@@ -686,6 +686,45 @@ async def execute_bridge(req: BridgeRequest):
         returncode=process.returncode,
     )
 
+class StarknetBridgeRequest(BaseModel):
+    environment: str = "sepolia"
+    token_contract: str
+    starknet_recipient: str
+    amount: int
+    dry_run: bool = True
+
+class StarknetBridgeResponse(BaseModel):
+    stdout: str
+    stderr: str
+    returncode: int
+
+@app.post("/bridge/starknet", response_model=StarknetBridgeResponse)
+async def execute_starknet_bridge(req: StarknetBridgeRequest):
+    script_path = "bridges/scripts/bridgeEthToStarknet.ts"
+    cmd = [
+        "npx", "ts-node", script_path,
+        req.environment,
+        req.token_contract,
+        req.starknet_recipient,
+        str(req.amount),
+    ]
+    env = os.environ.copy()
+    if req.dry_run:
+        env["SMOKE_TEST"] = "1"
+    process = await asyncio.create_subprocess_exec(
+        *cmd,
+        cwd="/app",
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        env=env,
+    )
+    stdout_bytes, stderr_bytes = await process.communicate()
+    return StarknetBridgeResponse(
+        stdout=stdout_bytes.decode(),
+        stderr=stderr_bytes.decode(),
+        returncode=process.returncode,
+    )
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000) 
