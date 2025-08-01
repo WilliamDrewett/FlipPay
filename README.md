@@ -280,6 +280,151 @@ curl "http://localhost:8000/polkadot/tokens/KSM"
 
 ---
 
+## StarkGate Bridge Integration
+
+The FlipPay backend includes a comprehensive StarkGate bridge endpoint for transferring tokens between Ethereum and Starknet. This frontend-friendly API provides easy token bridging with human-readable parameters and clear success/error responses.
+
+### How the StarkGate Bridge Works
+
+- **Base URL**: `http://localhost:8000/bridge/starkgate/`
+- **Supported Networks**: Sepolia testnet and Ethereum mainnet
+- **Supported Tokens**: ETH, USDC, USDT, STRK (varies by network)
+- **Validation**: Automatic parameter validation and error handling
+- **Format**: Accepts human-readable amounts (e.g., 1.5 USDC)
+
+### Available Endpoints
+
+#### Token Information
+- `GET /bridge/starkgate/tokens` - List all supported tokens and bridge contracts
+
+#### Bridge Execution  
+- `POST /bridge/starkgate` - Execute a StarkGate bridge transaction
+
+### Bridge Request Parameters
+
+```json
+{
+  "network": "sepolia",           // "sepolia" or "mainnet"
+  "token_symbol": "USDC",         // "ETH", "USDC", "USDT", "STRK"
+  "amount": 1.5,                  // Human-readable amount (e.g., 1.5 USDC)
+  "starknet_recipient": "0x...",  // L2 recipient address (64 chars)
+  "dry_run": true                 // true = validation only, false = real transaction
+}
+```
+
+### Bridge Response Format
+
+```json
+{
+  "success": true,
+  "transaction_hash": "0x5709911df8ef01e860532137e51629c6ab5978e41c8aabbc8c90debf00714813",
+  "amount_bridged": "1.5 USDC",
+  "token_info": {
+    "address": "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8",
+    "bridge": "0xf6080d9fbeebcd44d89affbfd42f098cbff92816",
+    "decimals": 6,
+    "symbol": "USDC"
+  },
+  "network_info": {
+    "network": "sepolia",
+    "bridge_contract": "0xf6080d9fbeebcd44d89affbfd42f098cbff92816",
+    "token_contract": "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8"
+  },
+  "gas_used": "165431"
+}
+```
+
+### Examples
+
+#### 1. List Supported Tokens
+
+Get all tokens supported by StarkGate bridge:
+
+```bash
+curl "http://localhost:8000/bridge/starkgate/tokens"
+```
+
+**Response**: Complete list with addresses, bridge contracts, and metadata
+
+#### 2. Bridge USDC (Dry Run)
+
+Test bridging 1 USDC from Ethereum Sepolia to Starknet:
+
+```bash
+curl -X POST "http://localhost:8000/bridge/starkgate" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "network": "sepolia",
+    "token_symbol": "USDC",
+    "amount": 1.0,
+    "starknet_recipient": "0x1234567890123456789012345678901234567890123456789012345678901234",
+    "dry_run": true
+  }'
+```
+
+#### 3. Bridge ETH (Real Transaction)
+
+Bridge 0.001 ETH to Starknet mainnet:
+
+```bash
+curl -X POST "http://localhost:8000/bridge/starkgate" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "network": "mainnet",
+    "token_symbol": "ETH",
+    "amount": 0.001,
+    "starknet_recipient": "0x0742d13c6d1adc2a80b5c0b30bc68d0c90aecf42e24c46b59cf4cc4f492b0f92",
+    "dry_run": false
+  }'
+```
+
+### Environment Requirements
+
+The bridge requires these environment variables:
+
+```bash
+ETHEREUM_KEY=0x...    # Private key for Ethereum transactions
+INFURA_KEY=abc123...  # Infura project ID for RPC access
+```
+
+### Supported Token Addresses
+
+#### Mainnet
+- **ETH**: `0x0000000000000000000000000000000000000000`
+- **USDC**: `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48`
+- **USDT**: `0xdAC17F958D2ee523a2206206994597C13D831ec7`
+- **STRK**: `0xCa14007Eff0dB1f8135f4C25B34De49AB0d42766`
+
+#### Sepolia Testnet
+- **ETH**: `0x0000000000000000000000000000000000000000`
+- **USDC**: `0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8`
+
+### Error Handling
+
+The API provides clear error messages for common issues:
+
+- **Invalid Token**: `"Token XYZ not supported on sepolia. Supported: ['ETH', 'USDC']"`
+- **Invalid Network**: `"Unsupported network: invalid. Supported: ['sepolia', 'mainnet']"`
+- **Insufficient Balance**: `"Insufficient ETH balance for gas fees"`
+- **Configuration**: `"ETHEREUM_KEY environment variable not set"`
+
+### Bridge Transaction Flow
+
+1. **Validation**: Checks network, token, amount, and configuration
+2. **Conversion**: Converts human-readable amounts to token smallest units
+3. **Execution**: Calls the token-specific StarkGate bridge contract
+4. **Response**: Returns transaction hash and details or clear error message
+
+### Integration Notes
+
+- Use `dry_run: true` for validation and testing
+- Always check the `success` field in responses
+- Transaction hashes can be verified on Etherscan
+- Bridge contracts are token-specific (not universal)
+- Minimum amounts are enforced to prevent dust transactions
+
+---
+
 ## EVM HTLC Contracts
 ### Limit order protocol contract deployed at 0x6af572bE6497d4Da120e51f310c6839E211E97AA
 

@@ -11,6 +11,11 @@ const NETWORKS = {
     rpcUrl: 'https://sepolia.infura.io/v3/' + (process.env.INFURA_KEY ?? ''),
     networkEnum: NetworkEnum.ETHEREUM, // Fusion SDK uses ETHEREUM for Sepolia testnet
     name: 'Sepolia Testnet'
+  },
+  mainnet: {
+    rpcUrl: 'https://mainnet.infura.io/v3/' + (process.env.INFURA_KEY ?? ''),
+    networkEnum: NetworkEnum.ETHEREUM,
+    name: 'Ethereum Mainnet'
   }
 };
 
@@ -18,6 +23,46 @@ const NETWORKS = {
 const FUSION_CONFIG = {
   url: 'https://api.1inch.dev/fusion',
   authKey: process.env.INCH_API_KEY // You'll need to get this from 1inch Developer Portal
+};
+
+// Supported tokens and their bridge addresses for StarkGate
+const STARKGATE_CONFIG: Record<string, Record<string, { token: string; bridge: string }>> = {
+  mainnet: {
+    ETH: { 
+      token: '0x0000000000000000000000000000000000000000',
+      bridge: '0xae0ee0a63a2ce6baeeffe56e7714fb4efe48d419'
+    },
+    USDC: { 
+      token: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+      bridge: '0xf6080d9fbeebcd44d89affbfd42f098cbff92816'
+    },
+    USDT: { 
+      token: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+      bridge: '0x83e7083709179c4e24814c23dcda9e2c50c70676'
+    },
+    DAI: { 
+      token: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+      bridge: '0x659a00c33263d9254fed382de81349426c795bb6'
+    },
+    WBTC: { 
+      token: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
+      bridge: '0x283751a21eafbfcd52297820d27c1f1963d9b5b4'
+    }
+  },
+  sepolia: {
+    ETH: { 
+      token: '0x0000000000000000000000000000000000000000',
+      bridge: '0xae0ee0a63a2ce6baeeffe56e7714fb4efe48d419'
+    },
+    USDC: { 
+      token: '0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8',
+      bridge: '0xf6080d9fbeebcd44d89affbfd42f098cbff92816'
+    },
+    STRK: { 
+      token: '0xb4FBF271143F4FBf7B91A5ded31805e42b2208d6',
+      bridge: '0xcE5485Cfb26914C5dcE00B9BAF0580364daFC7a4'
+    }
+  }
 };
 
 interface CrossChainSwapParams {
@@ -34,6 +79,27 @@ class CrossChainSwapService {
   private fusionSDK: FusionSDK;
   private wallet: Wallet;
   private provider: JsonRpcProvider;
+
+  /**
+   * Get supported token address for a given network
+   */
+  static getSupportedToken(network: string, symbol: string): string | undefined {
+    return STARKGATE_CONFIG[network]?.[symbol]?.token;
+  }
+
+  /**
+   * Get bridge address for a given token and network
+   */
+  static getBridgeAddress(network: string, symbol: string): string | undefined {
+    return STARKGATE_CONFIG[network]?.[symbol]?.bridge;
+  }
+
+  /**
+   * List all supported tokens for a network
+   */
+  static getSupportedTokens(network: string): string[] {
+    return Object.keys(STARKGATE_CONFIG[network] || {});
+  }
 
   constructor(network: keyof typeof NETWORKS) {
     const networkConfig = NETWORKS[network];
@@ -127,7 +193,14 @@ class CrossChainSwapService {
     error?: string;
   }> {
     try {
-      const bridgeableToken = params.bridgeableToken || '0xA0b86a33E6c6a0D6B1Ad73E2E3E2e0f3E2e2e2e2'; // USDC Sepolia
+      // Get the correct bridgeable token address for the network
+      const bridgeableToken = params.bridgeableToken || STARKGATE_CONFIG[params.network]?.USDC?.token;
+      
+      if (!bridgeableToken) {
+        throw new Error(`No supported bridgeable token found for network: ${params.network}`);
+      }
+
+      console.log(`L1 Swap: Converting ${params.fromToken} → ${bridgeableToken} on ${params.network}`);
 
       // Get quote from 1inch Fusion
       const quoteParams = {
@@ -214,10 +287,19 @@ class CrossChainSwapService {
       // Import and use existing bridge logic
       const { bridgeTokens } = await import('./bridgeEthToStarknet');
       
+      // Get the correct token address for the network
+      const defaultToken = params.bridgeableToken || STARKGATE_CONFIG[params.network]?.USDC?.token;
+      
+      if (!defaultToken) {
+        throw new Error(`No supported bridgeable token found for network: ${params.network}`);
+      }
+
+      console.log(`Using token address: ${defaultToken} for network: ${params.network}`);
+
       // Bridge the tokens using your existing infrastructure
       const bridgeResult = await bridgeTokens({
         network: params.network,
-        tokenAddress: params.bridgeableToken || '0xA0b86a33E6c6a0D6B1Ad73E2E3E2e0f3E2e2e2e2', // USDC Sepolia
+        tokenAddress: defaultToken,
         recipient: params.userL2Address,
         amount: amount,
         privateKey: process.env.ETHEREUM_KEY!
