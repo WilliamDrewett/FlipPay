@@ -1,4 +1,4 @@
-// @ts-nocheck
+// TypeScript compilation enabled - removed @ts-nocheck directive
 import * as dotenv from 'dotenv';
 import { Wallet, Contract, JsonRpcProvider } from 'ethers';
 import { setTimeout } from 'timers/promises';
@@ -52,11 +52,11 @@ dotenv.config();
 const BRIDGE_INFO: Record<string, { rpcUrl: string; bridgeAddress: string }> = {
   mainnet: {
     rpcUrl: 'https://mainnet.infura.io/v3/' + (process.env.INFURA_KEY ?? ''),
-    bridgeAddress: '0xc681833ae7e7afbc80c300a2fcb43ad8af316ba7' // StarkGate proxy
+    bridgeAddress: '0xcE5485Cfb26914C5dcE00B9BAF0580364daFC7a4' // STRK StarkGate Bridge Mainnet
   },
   sepolia: {
     rpcUrl: 'https://sepolia.infura.io/v3/' + (process.env.INFURA_KEY ?? ''),
-    bridgeAddress: '0xc77911fc9bb7fc5cf6ab5b16164d815f8e3d8f07' // Sepolia StarkGate proxy
+    bridgeAddress: '0xF6217de888fD6E6b2CbFBB2370973BE4c36a152D' // Correct Sepolia testnet address
   }
 };
 
@@ -85,7 +85,87 @@ if (!(environment in BRIDGE_INFO)) {
 }
 
 // ---------------------------------------------------------------------------
-// Main
+// Reusable bridge function for cross-chain swaps
+// ---------------------------------------------------------------------------
+export async function bridgeTokens(params: {
+  network: string;
+  tokenAddress: string;
+  recipient: string;
+  amount: string;
+  privateKey: string;
+}): Promise<{
+  success: boolean;
+  txHash?: string;
+  error?: string;
+}> {
+  try {
+    const amount = BigInt(params.amount);
+    
+    if (!(params.network in BRIDGE_INFO)) {
+      return { 
+        success: false, 
+        error: `Unknown network "${params.network}". Allowed: ${Object.keys(BRIDGE_INFO).join(', ')}` 
+      };
+    }
+
+    const { rpcUrl, bridgeAddress } = BRIDGE_INFO[params.network];
+
+    // Init signer and provider
+    const provider = new JsonRpcProvider(rpcUrl as string);
+    const wallet = new Wallet(params.privateKey, provider);
+
+    console.log('Bridge Environment :', params.network);
+    console.log('Bridge Address     :', bridgeAddress);
+    console.log('Token Address      :', params.tokenAddress);
+    console.log('Recipient          :', params.recipient);
+    console.log('Amount             :', amount.toString());
+
+    // Load bridge contract
+    const bridge = new Contract(bridgeAddress, starknetBridgeAbi as any, wallet);
+
+    // Get fee
+    let fee: bigint;
+    try {
+      const feeBn = await bridge.getDepositFee(amount);
+      fee = feeBn.toBigInt();
+      console.log('Bridge fee         :', fee.toString(), 'wei');
+    } catch (error) {
+      console.warn('⚠️  Using fallback fee for Sepolia testnet');
+      fee = BigInt('1000000000000000'); // 0.001 ETH
+    }
+
+    // Execute bridge deposit
+    const tx = await bridge.deposit(params.tokenAddress, params.recipient, amount, {
+      value: fee
+    });
+
+    console.log('Bridge tx submitted:', tx.hash);
+
+    const receipt = await tx.wait(1);
+    if (!receipt) {
+      return { 
+        success: false, 
+        error: `Transaction ${tx.hash} not included` 
+      };
+    }
+
+    console.log('Bridge tx confirmed in block:', receipt.blockNumber);
+
+    return {
+      success: true,
+      txHash: tx.hash
+    };
+
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error.message 
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Main CLI function
 // ---------------------------------------------------------------------------
 (async () => {
   const amount = BigInt(amountStr);
@@ -109,9 +189,16 @@ if (!(environment in BRIDGE_INFO)) {
   const bridge = new Contract(bridgeAddress, starknetBridgeAbi as any, wallet);
 
   // Fetch dynamic fee for the deposit call.  StarkGate exposes `getDepositFee(uint256)`.
-  const feeBn = await bridge.getDepositFee(amount);
-  const fee = feeBn.toBigInt();
-  console.log('Quoted fee (wei)   :', fee.toString());
+  let fee: bigint;
+  try {
+    const feeBn = await bridge.getDepositFee(amount);
+    fee = feeBn.toBigInt();
+    console.log('Quoted fee (wei)   :', fee.toString());
+  } catch (error) {
+    console.warn('⚠️  getDepositFee not available on Sepolia testnet, using default fee of 0.001 ETH');
+    fee = BigInt('1000000000000000'); // 0.001 ETH in wei as fallback
+    console.log('Using fallback fee :', fee.toString(), 'wei');
+  }
 
   // Perform the deposit.  The stakingSignatures param can be empty for default path.
   const tx = await bridge.deposit(tokenContract, starknetRecipient, amount, {

@@ -27,11 +27,8 @@ RUN apt-get update && apt-get install -y curl ca-certificates gnupg \
 COPY backend/bridges/package*.json ./bridges/
 RUN cd bridges && npm install --omit=dev
 
-# Copy the entire backend directory (Python sources)
+# Copy the entire backend directory (Python sources and bridges)
 COPY backend/ ./
-
-# Copy bridge source
-COPY backend/bridges ./bridges
 
 # Copy the entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/
