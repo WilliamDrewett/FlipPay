@@ -12,6 +12,7 @@ import asyncio
 import subprocess
 from fastapi.middleware.cors import CORSMiddleware
 from services.price_service import PriceService
+from services.polkadot_service import PolkadotService
 
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
@@ -23,6 +24,7 @@ app = FastAPI()
 
 # Initialize services
 price_service = PriceService()
+polkadot_service = PolkadotService()
 
 # -------------------------------
 # CORS configuration
@@ -382,6 +384,106 @@ async def oneinch_proxy_post(path: str, request: Request):
             raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"1inch API error: {str(e)}")
+
+
+# ---------------------------------------------------------------------------
+#  Polkadot API integration (token listing and pricing)
+# ---------------------------------------------------------------------------
+
+@app.get("/polkadot/tokens")
+async def get_polkadot_tokens():
+    """
+    Get list of all available Polkadot ecosystem tokens.
+    
+    Returns tokens from both on-chain asset registry and known ecosystem tokens.
+    """
+    try:
+        tokens_response = await polkadot_service.get_polkadot_tokens()
+        return tokens_response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Polkadot tokens error: {str(e)}")
+
+
+@app.get("/polkadot/tokens/search")
+async def search_polkadot_tokens(query: str = Query(..., description="Search query for token symbol or name")):
+    """
+    Search for Polkadot tokens by symbol or name.
+    
+    Example: /polkadot/tokens/search?query=DOT
+    """
+    try:
+        search_response = await polkadot_service.search_tokens(query)
+        return search_response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Polkadot token search error: {str(e)}")
+
+
+@app.get("/polkadot/tokens/{symbol}")
+async def get_polkadot_token_info(symbol: str = Path(..., description="Token symbol (e.g., DOT, KSM)")):
+    """
+    Get detailed information for a specific Polkadot token including current price.
+    
+    Example: /polkadot/tokens/DOT
+    """
+    try:
+        token_info = await polkadot_service.get_token_info(symbol)
+        if token_info is None:
+            raise HTTPException(status_code=404, detail=f"Token {symbol} not found")
+        return token_info
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Polkadot token info error: {str(e)}")
+
+
+@app.get("/polkadot/prices")
+async def get_polkadot_prices(tokens: str = Query(None, description="Comma-separated list of token symbols (optional)")):
+    """
+    Get current prices for Polkadot ecosystem tokens from CoinGecko.
+    
+    Examples:
+    - /polkadot/prices (all known tokens)
+    - /polkadot/prices?tokens=DOT,KSM,ACA (specific tokens)
+    """
+    try:
+        if tokens:
+            # Convert symbols to CoinGecko IDs
+            token_symbols = [t.strip().upper() for t in tokens.split(",")]
+            token_ids = []
+            for symbol in token_symbols:
+                if symbol in polkadot_service.polkadot_tokens:
+                    token_ids.append(polkadot_service.polkadot_tokens[symbol])
+            
+            if not token_ids:
+                raise HTTPException(status_code=400, detail="No valid tokens found in query")
+                
+            prices_response = await polkadot_service.get_token_prices_coingecko(token_ids)
+        else:
+            prices_response = await polkadot_service.get_token_prices_coingecko()
+            
+        return prices_response
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Polkadot prices error: {str(e)}")
+
+
+@app.get("/polkadot/prices/{symbol}")
+async def get_polkadot_token_price(symbol: str = Path(..., description="Token symbol (e.g., DOT, KSM)")):
+    """
+    Get current price for a specific Polkadot token.
+    
+    Example: /polkadot/prices/DOT
+    """
+    try:
+        price_info = await polkadot_service.get_token_price(symbol)
+        if price_info is None:
+            raise HTTPException(status_code=404, detail=f"Price for {symbol} not found")
+        return price_info
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Polkadot price error: {str(e)}")
 
 
 # ---------------------------------------------------------------------------
