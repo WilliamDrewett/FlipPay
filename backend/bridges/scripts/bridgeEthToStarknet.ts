@@ -48,15 +48,41 @@ dotenv.config();
 // Constants & helpers
 // ---------------------------------------------------------------------------
 
-/** Map between our `environment` CLI flag and actual on-chain parameters. */
-const BRIDGE_INFO: Record<string, { rpcUrl: string; bridgeAddress: string }> = {
+/** 
+ * StarkGate uses token-specific bridge contracts, not universal bridges.
+ * Each token has its own dedicated bridge address.
+ */
+const BRIDGE_INFO: Record<string, { 
+  rpcUrl: string; 
+  bridges: Record<string, string>; 
+}> = {
   mainnet: {
     rpcUrl: 'https://mainnet.infura.io/v3/' + (process.env.INFURA_KEY ?? ''),
-    bridgeAddress: '0xcE5485Cfb26914C5dcE00B9BAF0580364daFC7a4' // STRK StarkGate Bridge Mainnet
+    bridges: {
+      // ETH Bridge (for native ETH transfers)
+      '0x0000000000000000000000000000000000000000': '0xae0ee0a63a2ce6baeeffe56e7714fb4efe48d419',
+      // USDC Bridge 
+      '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48': '0xf6080d9fbeebcd44d89affbfd42f098cbff92816',
+      // USDT Bridge
+      '0xdAC17F958D2ee523a2206206994597C13D831ec7': '0x83e7083709179c4e24814c23dcda9e2c50c70676',
+      // DAI Bridge  
+      '0x6B175474E89094C44Da98b954EedeAC495271d0F': '0x659a00c33263d9254fed382de81349426c795bb6',
+      // WBTC Bridge
+      '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599': '0x283751a21eafbfcd52297820d27c1f1963d9b5b4',
+      // STRK Bridge
+      '0xCa14007Eff0dB1f8135f4C25B34De49AB0d42766': '0xcE5485Cfb26914C5dcE00B9BAF0580364daFC7a4'
+    }
   },
   sepolia: {
     rpcUrl: 'https://sepolia.infura.io/v3/' + (process.env.INFURA_KEY ?? ''),
-    bridgeAddress: '0xF6217de888fD6E6b2CbFBB2370973BE4c36a152D' // Correct Sepolia testnet address
+    bridges: {
+      // ETH Bridge (for native ETH transfers on Sepolia)
+      '0x0000000000000000000000000000000000000000': '0xae0ee0a63a2ce6baeeffe56e7714fb4efe48d419', 
+      // USDC Bridge on Sepolia - using the verified token address
+      '0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8': '0xf6080d9fbeebcd44d89affbfd42f098cbff92816',
+      // STRK Bridge on Sepolia  
+      '0xb4FBF271143F4FBf7B91A5ded31805e42b2208d6': '0xcE5485Cfb26914C5dcE00B9BAF0580364daFC7a4'
+    }
   }
 };
 
@@ -108,7 +134,17 @@ export async function bridgeTokens(params: {
       };
     }
 
-    const { rpcUrl, bridgeAddress } = BRIDGE_INFO[params.network];
+    const { rpcUrl, bridges } = BRIDGE_INFO[params.network];
+    
+    // Find the correct bridge for this token
+    const bridgeAddress = bridges[params.tokenAddress];
+    if (!bridgeAddress) {
+      const supportedTokens = Object.keys(bridges);
+      return {
+        success: false,
+        error: `Token ${params.tokenAddress} not supported on ${params.network}. Supported tokens: ${supportedTokens.join(', ')}`
+      };
+    }
 
     // Init signer and provider
     const provider = new JsonRpcProvider(rpcUrl as string);
@@ -159,7 +195,7 @@ export async function bridgeTokens(params: {
   } catch (error) {
     return { 
       success: false, 
-      error: error.message 
+      error: error instanceof Error ? error.message : String(error)
     };
   }
 }
@@ -170,7 +206,16 @@ export async function bridgeTokens(params: {
 (async () => {
   const amount = BigInt(amountStr);
 
-  const { rpcUrl, bridgeAddress } = BRIDGE_INFO[environment];
+  const { rpcUrl, bridges } = BRIDGE_INFO[environment];
+  
+  // Find the correct bridge for this token
+  const bridgeAddress = bridges[tokenContract];
+  if (!bridgeAddress) {
+    const supportedTokens = Object.keys(bridges);
+    console.error(`❌ Token ${tokenContract} not supported on ${environment}`);
+    console.error(`📋 Supported tokens: ${supportedTokens.join(', ')}`);
+    process.exit(1);
+  }
 
   // Init signer and provider
   const provider = new JsonRpcProvider(rpcUrl as string);
