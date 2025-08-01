@@ -127,6 +127,156 @@ curl -X POST "http://localhost:8000/oneinch/swap/v5.2/1/swap" \
 - **DAI**: `0x6b175474e89094c44da98b954eedeac495271d0f`
 - **WETH**: `0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2`
 
+---
+
+## Polkadot API Integration
+
+The FlipPay backend includes comprehensive Polkadot ecosystem token listing and pricing capabilities. This service provides access to Polkadot native tokens and parachain assets with real-time pricing data from CoinGecko.
+
+### How the Polkadot Service Works
+
+- **Base URL**: `http://localhost:8000/polkadot/`
+- **Data Sources**: 
+  - **Token Registry**: Polkadot RPC (with CoinGecko fallback)
+  - **Price Data**: CoinGecko API
+- **Supported Tokens**: 15+ major Polkadot ecosystem tokens
+- **Fallback Mode**: Works without Polkadot RPC dependency (CoinGecko-only mode)
+
+### Available Endpoints
+
+#### Token Listing & Search
+- `GET /polkadot/tokens` - List all available Polkadot ecosystem tokens
+- `GET /polkadot/tokens/search?query={query}` - Search tokens by symbol or name
+- `GET /polkadot/tokens/{symbol}` - Get detailed info for a specific token
+
+#### Price & Market Data  
+- `GET /polkadot/prices` - Get current prices for all tokens
+- `GET /polkadot/prices?tokens={symbols}` - Get prices for specific tokens (comma-separated)
+- `GET /polkadot/prices/{symbol}` - Get current price for a specific token
+
+### Supported Tokens
+
+The service includes major Polkadot ecosystem tokens:
+
+- **DOT** (Polkadot) - Native token
+- **KSM** (Kusama) - Canary network
+- **ACA** (Acala) - DeFi hub
+- **ASTR** (Astar) - Smart contracts
+- **GLMR** (Moonbeam) - Ethereum compatibility
+- **HDX** (HydraDX) - Cross-chain liquidity
+- **MOVR** (Moonriver) - Kusama parachain
+- **And 8+ more ecosystem tokens...**
+
+### Examples
+
+#### 1. List All Polkadot Tokens
+
+Get complete token registry with metadata:
+
+```bash
+curl "http://localhost:8000/polkadot/tokens"
+```
+
+**Response**: Complete list with symbol, name, decimals, and CoinGecko IDs
+```json
+{
+  "tokens": {
+    "DOT": {
+      "symbol": "DOT",
+      "name": "DOT", 
+      "decimals": 10,
+      "type": "ecosystem",
+      "coingecko_id": "polkadot"
+    },
+    "KSM": { ... },
+    "ACA": { ... }
+  },
+  "total_count": 15
+}
+```
+
+#### 2. Search for Specific Tokens
+
+```bash
+curl "http://localhost:8000/polkadot/tokens/search?query=moon"
+```
+
+**Response**: Returns GLMR (Moonbeam) and MOVR (Moonriver)
+
+#### 3. Get All Token Prices
+
+Get live market data for all supported tokens:
+
+```bash
+curl "http://localhost:8000/polkadot/prices"
+```
+
+**Response**: Live prices with market cap, 24h change, and volume
+```json
+{
+  "prices": {
+    "DOT": {
+      "symbol": "DOT",
+      "price_usd": 3.58,
+      "market_cap_usd": 5466101459.80,
+      "change_24h_percent": -4.32,
+      "volume_24h_usd": 404203253.31,
+      "source": "coingecko"
+    }
+  }
+}
+```
+
+#### 4. Get Specific Token Prices
+
+Filter for specific tokens only:
+
+```bash
+curl "http://localhost:8000/polkadot/prices?tokens=DOT,KSM,ACA"
+```
+
+#### 5. Get Individual Token Price
+
+```bash
+curl "http://localhost:8000/polkadot/prices/DOT"
+```
+
+**Response**: 
+```json
+{
+  "symbol": "DOT",
+  "price_usd": 3.58,
+  "market_cap_usd": 5466101459.80,
+  "change_24h_percent": -4.32,
+  "volume_24h_usd": 404203253.31,
+  "source": "coingecko",
+  "timestamp": 1736285493
+}
+```
+
+#### 6. Get Token Details with Price
+
+Get comprehensive token information including live pricing:
+
+```bash
+curl "http://localhost:8000/polkadot/tokens/KSM"
+```
+
+**Response**: Token metadata enriched with current market data
+```json
+{
+  "symbol": "KSM",
+  "name": "KSM",
+  "decimals": 12,
+  "type": "ecosystem",
+  "coingecko_id": "kusama",
+  "price_usd": 13.69,
+  "market_cap_usd": 231281664.24,
+  "change_24h_percent": -5.03,
+  "volume_24h_usd": 15535851.51
+}
+```
+
 
 ---
 
