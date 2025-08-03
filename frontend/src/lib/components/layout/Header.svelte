@@ -196,7 +196,7 @@
 	<div class="flex w-full items-center justify-between px-6 py-3">
 		<div class="flex items-center gap-8">
 			<a href="/">
-				<h1>FlipPay</h1>
+				<h1><span class="text-primary">Polkadot</span>Swap</h1>
 			</a>
 			<nav class="-mb-4">
 				<ul class="flex items-center gap-8">

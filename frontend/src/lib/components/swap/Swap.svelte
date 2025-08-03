@@ -55,8 +55,10 @@
 		loading = true;
 		executeCrossChainSwap().then((res) => {
 			console.log(res);
+			alert("swap success!");
 		}).catch((error) => {
 			console.error(error);
+			alert("swap failed!");
 		}).finally(() => {
 			loading = false;
 		});
