@@ -39,7 +39,7 @@ async function executeScript(command: string, env?: Record<string, string>): Pro
     };
 
     const { stdout, stderr } = await execAsync(command, options);
-    
+
     return {
       success: true,
       output: stdout,
@@ -97,9 +97,9 @@ app.post('/api/execute-swap', async (req: Request, res: Response) => {
 
     // Step 1: Create Order
     console.log('📝 Step 1: Creating order...');
-    
+
     const orderResult = await executeScript('npm run create:order');
-    
+
     steps.push({
       step: '1-create-order',
       command: 'npm run create:order',

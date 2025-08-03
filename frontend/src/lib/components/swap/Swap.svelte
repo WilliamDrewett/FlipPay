@@ -8,7 +8,10 @@
 	import { cubicOut } from 'svelte/easing';
 	import { createUser } from '$lib/api/createUser';
 	import { getEthAndDotPrices } from '$lib/api/getSpotPrices';
+	import { executeCrossChainSwap } from '$lib/api/swap2';
 	let playAuto = $state(true);
+
+	let loading = $state(false);
 
     const AUTO_RELOAD_TIME = 10;
 	let swapDirection = $state<'ETH_TO_DOT' | 'DOT_TO_ETH'>('ETH_TO_DOT');
@@ -49,9 +52,17 @@
     });
 
 	async function handleSwap() {
-		console.log('swap');
-		const user = await createUser("chat");
-		console.log(user);
+		loading = true;
+		executeCrossChainSwap().then((res) => {
+			console.log(res);
+		}).catch((error) => {
+			console.error(error);
+		}).finally(() => {
+			loading = false;
+		});
+		// console.log('swap');
+		// const user = await createUser("chat");
+		// console.log(user);
 	}
 
 	function handleSwapDirection() {
@@ -106,7 +117,11 @@
 			<p class="text-base-content text-xs">Spent directly my flip points</p>
 		</div>
 		<button class="btn btn-primary w-full rounded-2xl text-white" onclick={handleSwap}>
-			{playAuto ? 'Swap and Play' : 'Swap'}
+			{#if loading}
+				<div class="loading loading-spinner loading-sm"></div><p>Swapping...</p>
+			{:else}
+				{playAuto ? 'Swap and Play' : 'Swap'}
+			{/if}
 		</button>
 	</div>
 </Card>

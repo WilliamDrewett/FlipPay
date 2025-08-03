@@ -8,7 +8,7 @@
 
 <!-- --------------------------------------- CONTENT -->
 <div
-	class="border border-neutral-600 flex w-full flex-col gap-2 rounded-2xl p-4 text-xs"
+	class="border border-neutral-600 flex w-full flex-col gap-2 rounded-2xl p-4 text-xs opacity-25"
 	style={source ? 'background-color: #111' : ''}
 >
     <div class="flex items-center justify-between gap-2 text-sm w-full">
