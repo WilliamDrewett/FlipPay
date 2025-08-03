@@ -393,7 +393,7 @@ export function updateOrderStatus(orderId: string, status: AtomicSwapOrder['stat
 
 // Integration function to execute swap using your existing CrossChainSwapManager
 export async function executeOrderWithSwapManager(orderId: string) {
-  const { CrossChainSwapManager } = await import('./swapEthToPolkadot');
+  const { CrossChainSwapManager } = await import('./swap');
   
   const order = loadOrder(orderId);
   const swapConfig = loadSwapConfig(orderId);

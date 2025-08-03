@@ -531,7 +531,7 @@ async function main() {
     console.log("3. 🔵 TAKER claims ETH/USDC (using revealed secret):");
     console.log("   ORDER_ID=" + orderId + " npm run taker:claim-eth");
     console.log("4. 🔄 Alternative: Use integrated swap execution:");
-    console.log("   ORDER_ID=" + orderId + " npm run execute:atomic-swap");
+    console.log("   ORDER_ID=" + orderId + " npm run execute:swap");
     
     console.log("\n📋 SWAP STATUS:");
     console.log("===============");

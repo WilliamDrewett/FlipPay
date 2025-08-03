@@ -466,3 +466,22 @@ It should return something like this
 ```
 {"jsonrpc":"2.0","id":1,"result":"Development"}
 ```
+
+### The following is a simulation of ETH<>DOT transfer
+
+Create an order. It will be filled for you automatically
+
+```
+npm run create:order
+```
+
+Next, create the escrow contracts. Here's an example
+
+```
+ORDER_ID=eth_dot_order_1754215281942 npm run create:escrow
+```
+
+Execute the atomic swap
+```
+ORDER_ID=eth_dot_order_1754215281942 npm run execute:swap
+```
