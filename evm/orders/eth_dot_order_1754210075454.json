@@ -1,0 +1,92 @@
+{
+  "orderId": "eth_dot_order_1754210075454",
+  "timestamp": 1754210075455,
+  "ethereum": {
+    "network": "sepolia",
+    "chainId": 11155111,
+    "rpcUrl": "https://ethereum-sepolia-rpc.publicnode.com"
+  },
+  "polkadot": {
+    "network": "development",
+    "wsUrl": "ws://localhost:9933"
+  },
+  "maker": {
+    "address": "0x61408Ec3bC83622aF4e14C07a42AF1AC553A8DAc",
+    "polkadotAddress": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+    "provides": {
+      "asset": "ERC20",
+      "amount": "100000000",
+      "token": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+      "network": "ethereum"
+    },
+    "wants": {
+      "asset": "DOT",
+      "amount": "10000000000000",
+      "network": "polkadot",
+      "address": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"
+    }
+  },
+  "secret": "0xb8c2e9e5dc6cb31aa82df0539b16b42a3940479557bc5858ed5bc787f63f7741",
+  "hashlock": "0x4a322c04719f1522c7cc883cbc349624a18e16404c5189772682033da9d45207",
+  "timelock": {
+    "withdrawalPeriod": 0,
+    "publicWithdrawalPeriod": 1800,
+    "cancellationPeriod": 7200,
+    "publicCancellationPeriod": 10800
+  },
+  "status": "FILLED",
+  "contracts": {
+    "ethereum": {
+      "escrowFactory": "0x3d78f5b39bE054B48b685AC4CcE0850499e58FaD",
+      "resolver": "0xF6b928896E57955727C29d33a3B716C25E10A4e4"
+    },
+    "polkadot": {
+      "htlcPallet": "template"
+    }
+  },
+  "safetyDeposit": {
+    "amount": "100000000000000000",
+    "network": "ethereum"
+  },
+  "taker": {
+    "address": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+    "ethereumAddress": "0x61408Ec3bC83622aF4e14C07a42AF1AC553A8DAc",
+    "filledAt": 1754210075455
+  },
+  "polkadotHTLC": {
+    "htlcId": "polkadot_htlc_1754210075455",
+    "blockHash": "0x4ed18f6a0f2facfba4bf7dfcc75076c0014490e1f87c837f25a46842e6e2181a",
+    "blockNumber": 1187,
+    "extrinsicHash": "0xb9e4f60a3a574cddf262a366f745b9d550ae8b6e15be58800973fb29dc5211bc",
+    "extrinsicIndex": 3,
+    "createdAt": 1754210075455,
+    "amount": "10000000000000",
+    "asset": "DOT",
+    "recipient": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+    "sender": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+    "hashlock": "0x4a322c04719f1522c7cc883cbc349624a18e16404c5189772682033da9d45207",
+    "secret": null,
+    "timelock": {
+      "withdrawalBlock": 1534,
+      "cancellationBlock": 1992
+    },
+    "status": "CREATED"
+  },
+  "transactions": {
+    "polkadot": {
+      "htlcCreation": {
+        "hash": "0xa8043dd370ceec3c2bf3243e37cab7aef04eec04f7432f1efb0122576d86593d",
+        "blockNumber": 1879,
+        "timestamp": 1754210075455
+      }
+    },
+    "evmEscrowCreation": "0x68023e464f56b436ff7cbca2e7316a060439153aacd5f9b479150fac0d7514aa"
+  },
+  "evmEscrow": {
+    "address": "0x7D9bE409CAff73C6aa0E3eBe7e02393d678ecc46",
+    "txHash": "0x68023e464f56b436ff7cbca2e7316a060439153aacd5f9b479150fac0d7514aa",
+    "amount": "100000000",
+    "safetyDeposit": "100000000000000000",
+    "creationFee": "10000000000000000"
+  }
+}

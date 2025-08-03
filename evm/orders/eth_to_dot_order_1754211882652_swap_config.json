@@ -1,0 +1,15 @@
+{
+  "direction": "ETH_TO_DOT",
+  "ethAmount": "100",
+  "dotAmount": "10",
+  "ethToken": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+  "safetyDeposit": "0.1",
+  "secret": "0xebb33f22a9c484b1bb644d6f6312d4ceca38e23869b2db990d0a892fca08da9f",
+  "hashlock": "0x970672cacf0bfd602bba54f302c7f5ef653b534329d9cfb9ea4e1e31c6268c21",
+  "timelock": {
+    "dstWithdrawal": "0",
+    "dstPublicWithdrawal": "1800",
+    "dstCancellation": "7200",
+    "dstPublicCancellation": "10800"
+  }
+}

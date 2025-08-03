@@ -1,0 +1,13 @@
+{
+  "ethAmount": "100.0",
+  "polkadotAmount": "10.0",
+  "safetyDeposit": "0.1",
+  "secret": "0x618e9bcea0cb718b77c9f608e64d08cbb415643cbc785fee3292c7cc8120717b",
+  "hashlock": "0xfee0113b9a7c90843a46ae225bb032c07adfbadd5b9bc959c34a49d311289533",
+  "timelock": {
+    "dstWithdrawal": "0",
+    "dstPublicWithdrawal": "1800",
+    "dstCancellation": "7200",
+    "dstPublicCancellation": "10800"
+  }
+}

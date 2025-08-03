@@ -1,0 +1,56 @@
+{
+  "orderId": "eth_dot_order_1754150579890",
+  "timestamp": 1754150579893,
+  "ethereum": {
+    "network": "sepolia",
+    "chainId": 11155111,
+    "rpcUrl": "https://ethereum-sepolia-rpc.publicnode.com"
+  },
+  "polkadot": {
+    "network": "development",
+    "wsUrl": "ws://localhost:9933"
+  },
+  "maker": {
+    "address": "0x61408Ec3bC83622aF4e14C07a42AF1AC553A8DAc",
+    "polkadotAddress": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+    "provides": {
+      "asset": "ERC20",
+      "amount": "100000000",
+      "token": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+      "network": "ethereum"
+    },
+    "wants": {
+      "asset": "DOT",
+      "amount": "10000000000000",
+      "network": "polkadot",
+      "address": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"
+    }
+  },
+  "secret": "0x618e9bcea0cb718b77c9f608e64d08cbb415643cbc785fee3292c7cc8120717b",
+  "hashlock": "0xfee0113b9a7c90843a46ae225bb032c07adfbadd5b9bc959c34a49d311289533",
+  "timelock": {
+    "withdrawalPeriod": 0,
+    "publicWithdrawalPeriod": 1800,
+    "cancellationPeriod": 7200,
+    "publicCancellationPeriod": 10800
+  },
+  "status": "FILLED",
+  "contracts": {
+    "ethereum": {
+      "escrowFactory": "0x3d78f5b39bE054B48b685AC4CcE0850499e58FaD",
+      "resolver": "0xF6b928896E57955727C29d33a3B716C25E10A4e4"
+    },
+    "polkadot": {
+      "htlcPallet": "template"
+    }
+  },
+  "safetyDeposit": {
+    "amount": "100000000000000000",
+    "network": "ethereum"
+  },
+  "taker": {
+    "address": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+    "ethereumAddress": "0x61408Ec3bC83622aF4e14C07a42AF1AC553A8DAc",
+    "filledAt": 1754150579893
+  }
+}

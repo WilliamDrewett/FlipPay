@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "create:order": "npx ts-node src/createOrder.ts",
+    "create:escrow": "npx ts-node src/createEscrow.ts",
+    "execute:swap": "npx ts-node src/swap.ts"
   },
   "keywords": [],
   "author": "",
@@ -13,8 +16,15 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@1inch/cross-chain-sdk": "^0.2.1-rc.59",
+    "@1inch/cross-chain-sdk": "^0.1.15-rc.0",
+    "@1inch/tsconfig": "^1.0.7",
+    "@polkadot/api": "^16.4.3",
+    "@polkadot/util": "^13.5.4",
+    "@polkadot/util-crypto": "^13.5.4",
     "crypto": "^1.0.1",
+    "dotenv": "^17.2.1",
+    "ethers": "^6.15.0",
+    "hardhat": "^2.24.1",
     "web3": "^4.16.0"
   }
 }
